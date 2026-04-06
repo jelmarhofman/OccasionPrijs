@@ -1315,31 +1315,53 @@ function _filterOutliers(prices) {
   return prices.filter(p => p >= rough * 0.60 && p <= rough * 1.60);
 }
 
-/* ── Proxy helper: probeert allorigins.win → corsproxy.io → codetabs ── */
+/* ── Proxy helper: probeert alle proxies tegelijk; eerste succes wint ── */
 const _PROXIES = [
   u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
   u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
   u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
 ];
 
-async function _proxyGet(targetUrl, ms = 14000) {
-  for (const proxyFn of _PROXIES) {
-    try {
-      const res = await fetch(proxyFn(targetUrl), { signal: AbortSignal.timeout(ms) });
-      if (!res.ok) continue;
-      const text = await res.text();
-      /* allorigins.win verpakt het antwoord in JSON met .contents */
-      try {
-        const j = JSON.parse(text);
-        if (typeof j.contents === 'string' && j.contents.length > 100) return j.contents;
-        /* corsproxy / codetabs sturen ruwe JSON terug */
-        return text;
-      } catch {
-        return text; /* raw HTML van transparante proxy */
-      }
-    } catch (e) {
-      console.warn('[proxy]', proxyFn(targetUrl).slice(0, 60), '-', e.message.slice(0, 80));
+async function _proxyGet(targetUrl, ms = 12000) {
+  /* AbortController + setTimeout werkt op alle browsers (incl. oudere mobiele Safari) */
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), ms);
+
+  function _fetchOne(proxyFn) {
+    return fetch(proxyFn(targetUrl), { signal: ac.signal })
+      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(text => {
+        /* allorigins.win verpakt het antwoord in JSON met .contents */
+        try {
+          const j = JSON.parse(text);
+          if (typeof j.contents === 'string' && j.contents.length > 100) return j.contents;
+          /* corsproxy / codetabs sturen ruwe JSON terug */
+          return text;
+        } catch {
+          return text; /* raw HTML van transparante proxy */
+        }
+      });
+  }
+
+  try {
+    /* Probeer alle proxies tegelijk; eerste succesvolle respons wint */
+    if (typeof Promise.any === 'function') {
+      return await Promise.any(_PROXIES.map(fn =>
+        _fetchOne(fn).catch(e => {
+          console.warn('[proxy]', fn(targetUrl).slice(0, 60), '-', e.message.slice(0, 80));
+          throw e;
+        })
+      )).catch(() => { throw new Error('Alle proxies mislukt voor: ' + targetUrl.slice(0, 70)); });
     }
+    /* Fallback voor zeer oude browsers: achtereenvolgens proberen */
+    for (const proxyFn of _PROXIES) {
+      try { return await _fetchOne(proxyFn); }
+      catch (e) { console.warn('[proxy]', proxyFn(targetUrl).slice(0, 60), '-', e.message.slice(0, 80)); }
+    }
+  } finally {
+    clearTimeout(timer);
+    ac.abort(); /* annuleer eventuele nog lopende verzoeken */
   }
   throw new Error('Alle proxies mislukt voor: ' + targetUrl.slice(0, 70));
 }
