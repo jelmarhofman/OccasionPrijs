@@ -957,11 +957,17 @@ syncSlider(document.getElementById('nieuwprijsSlider'), document.getElementById(
 
 function depRatio(leeftijd, brandstof) {
   const isEV = brandstof === 'Elektrisch';
-  const base = isEV ? 0.80 : 0.77;
-  const decay = isEV ? 0.87 : 0.85;
+  const base      = isEV ? 0.80 : 0.77;
+  const decay     = isEV ? 0.87 : 0.85;
+  const SLOW_FROM = 8;                          // jaar waarop afschrijving vertraagt
+  const slowDecay = isEV ? 0.97 : 0.96;        // na jaar 8: ~3% (EV) of ~4% p.j. i.p.v. ~15%
+  const floor     = isEV ? 0.07 : 0.06;        // minimale restwaarde (marktbodem)
   if (leeftijd <= 0) return 1;
   if (leeftijd === 1) return base;
-  return base * Math.pow(decay, leeftijd - 1);
+  if (leeftijd <= SLOW_FROM) return base * Math.pow(decay, leeftijd - 1);
+  /* Na jaar 8 vlakt de curve af (youngtimereffect, vraag > aanbod) */
+  const ratioAtSlow = base * Math.pow(decay, SLOW_FROM - 1);
+  return Math.max(ratioAtSlow * Math.pow(slowDecay, leeftijd - SLOW_FROM), floor);
 }
 
 function kmCorrectie(km, leeftijd) {
@@ -1353,6 +1359,11 @@ async function _tryAS24JsonApi(merk, model, uitvoering, bouwjaar, km, brandstof,
   const text = await _proxyGet(`https://www.autoscout24.nl/proxy/sv/api/v2/listings?${p}`);
   const data = JSON.parse(text);
   const raw = (data.listings || []).flatMap(l => {
+    /* Post-filter op bouwjaar en km als die beschikbaar zijn in de response */
+    const listingYear = l.vehicle?.year || l.year || parseInt((l.firstRegistration || '').slice(0, 4));
+    if (bouwjaar && listingYear && (listingYear < bouwjaar - 1 || listingYear > bouwjaar + 1)) return [];
+    const listingKm = l.vehicle?.mileage ?? l.mileage;
+    if (km > 0 && listingKm != null && (listingKm < km - 40000 || listingKm > km + 40000)) return [];
     const v = l.prices?.public?.priceRaw ?? l.price ?? l.priceCurrent;
     const n = _parseEuros(v);
     return n > 1000 && n < 499000 ? [n] : [];
@@ -1417,12 +1428,31 @@ async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km, brandst
   const transTerm = _mapMarktplaatsGear(transmissie);
   const q = [merk, model, uitvoering, fuelTerm, transTerm].filter(Boolean).join(' ');
   const p = new URLSearchParams({ query: q, categoryId: '91', l1CategoryId: '91', limit: '30', offset: '0' });
-  if (bouwjaar) { p.set('yearFrom', bouwjaar - 1); p.set('yearTo', bouwjaar + 1); }
-  if (km > 0)   { p.set('mileageFrom', Math.max(0, km - 20000)); p.set('mileageTo', km + 20000); }
+  if (bouwjaar) {
+    p.set('yearFrom', bouwjaar - 1);
+    p.set('yearTo',   bouwjaar + 1);
+    /* attributeRanges-formaat voor nieuwere Marktplaats-backend */
+    p.append('attributeRanges[]', `constructionYear:${bouwjaar - 1}:${bouwjaar + 1}`);
+  }
+  if (km > 0) {
+    const kmLow = Math.max(0, km - 20000), kmHigh = km + 20000;
+    p.set('mileageFrom', kmLow);
+    p.set('mileageTo',   kmHigh);
+    p.append('attributeRanges[]', `mileage:${kmLow}:${kmHigh}`);
+  }
   const text = await _proxyGet(`https://www.marktplaats.nl/lrp/api/search?${p}`);
   const data = JSON.parse(text);
   const listings = [...(data.listings || []), ...(data.searchResults || [])];
   const raw = listings.flatMap(l => {
+    /* Post-filter op bouwjaar als het attribuut beschikbaar is in het resultaat */
+    if (bouwjaar && Array.isArray(l.attributes)) {
+      const yrAttr = l.attributes.find(a =>
+        a.key === 'constructionYear' || a.key === 'year' || a.key === 'bouwjaar');
+      if (yrAttr) {
+        const y = parseInt(yrAttr.value);
+        if (!isNaN(y) && (y < bouwjaar - 1 || y > bouwjaar + 1)) return [];
+      }
+    }
     const cents = l.priceInfo?.priceCents;
     if (cents > 0) return [cents / 100];
     const n = _parseEuros(l.priceInfo?.priceText || l.price);
