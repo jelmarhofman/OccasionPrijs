@@ -587,20 +587,20 @@
       <div class="field">
         <label>Onderhoudshistorie</label>
         <select id="onderhoud">
-          <option value="1.05">Volledig dealer-onderhoud</option>
+          <option value="1.03">Volledig dealer-onderhoud</option>
           <option value="1.02" selected>Regelmatig onderhoud (APK)</option>
           <option value="0.97">Onderhoud onbekend</option>
-          <option value="0.92">Achterstallig onderhoud</option>
+          <option value="0.90">Achterstallig onderhoud</option>
         </select>
       </div>
 
       <div class="field">
         <label>APK geldig tot</label>
         <select id="apk">
-          <option value="1.03">&gt; 12 maanden</option>
+          <option value="1.02">&gt; 12 maanden</option>
           <option value="1.01" selected>6–12 maanden</option>
           <option value="0.99">0–6 maanden</option>
-          <option value="0.96">Verlopen / onbekend</option>
+          <option value="0.93">Verlopen / onbekend</option>
         </select>
       </div>
     </div>
@@ -742,12 +742,12 @@ function updateUitvoeringList() {
 function uitvoeringMultiplier(uitvoering) {
   if (!uitvoering) return 1.0;
   const u = uitvoering.toLowerCase();
-  // High-performance (+18–28%)
-  if (/\b(rs\s?\d+|63\s?amg|45\s?amg|43\s?amg|type\s?r|golf\s?r\b|gti\b|gts\b|gtd\b|cupra\b(?!\s*line)|m3\b|m4\b|m5\b|m135|m235|m240|m440|\bst\b(?!\s*line)|i30\s?n\b|n\s?performance|wrx\s?sti|abarth|gr\s?yaris|polo\s?gti)\b/.test(u)) return 1.23;
-  // Sport/premium trims (+8–12%)
-  if (/\b(r[\s-]?line|s[\s-]?line|m\s?sport|amg[\s-]?line|n[\s-]?line|gr\s?sport|st[\s-]?line|gte\b|fr\b|r-design|xdrive|veloce|gt(?!\s*line)|rs\s*line|xcellence|monte\s*carlo|polestar)\b/.test(u)) return 1.10;
-  // Mid-premium trims (+3–6%)
-  if (/\b(gt[\s-]?line|highline|sport(?!\s*line)|allure|inscription|titanium|prestige|executive|premium|luxe|comfortline|advanced|business\s*edition|dynamic|ultimate|laurin|edizione)\b/.test(u)) return 1.05;
+  // High-performance (+15–18%)
+  if (/\b(rs\s?\d+|63\s?amg|45\s?amg|43\s?amg|type\s?r|golf\s?r\b|gti\b|gts\b|gtd\b|cupra\b(?!\s*line)|m3\b|m4\b|m5\b|m135|m235|m240|m440|\bst\b(?!\s*line)|i30\s?n\b|n\s?performance|wrx\s?sti|abarth|gr\s?yaris|polo\s?gti)\b/.test(u)) return 1.18;
+  // Sport/premium trims (+5–7%)
+  if (/\b(r[\s-]?line|s[\s-]?line|m\s?sport|amg[\s-]?line|n[\s-]?line|gr\s?sport|st[\s-]?line|gte\b|fr\b|r-design|xdrive|veloce|gt(?!\s*line)|rs\s*line|xcellence|monte\s*carlo|polestar)\b/.test(u)) return 1.07;
+  // Mid-premium trims (+2–3%)
+  if (/\b(gt[\s-]?line|highline|sport(?!\s*line)|allure|inscription|titanium|prestige|executive|premium|luxe|comfortline|advanced|business\s*edition|dynamic|ultimate|laurin|edizione)\b/.test(u)) return 1.03;
   // Base/entry trims (-2–3%)
   if (/\b(trendline|entry|access|visia|ambition|life\b|basic|start|essent|trend\b|zen\b|expression|essential|reference|active\b|comfort\b(?!\s*line))\b/.test(u)) return 0.97;
   return 1.0;
@@ -957,8 +957,8 @@ syncSlider(document.getElementById('nieuwprijsSlider'), document.getElementById(
 
 function depRatio(leeftijd, brandstof) {
   const isEV = brandstof === 'Elektrisch';
-  const base = isEV ? 0.82 : 0.78;
-  const decay = isEV ? 0.88 : 0.86;
+  const base = isEV ? 0.80 : 0.77;
+  const decay = isEV ? 0.87 : 0.85;
   if (leeftijd <= 0) return 1;
   if (leeftijd === 1) return base;
   return base * Math.pow(decay, leeftijd - 1);
@@ -985,8 +985,8 @@ function brandstofMultiplier(b) {
 
 function carrosserieMultiplier(c) {
   return { 'Hatchback': 1.00, 'Sedan': 0.98, 'Stationwagen': 1.02,
-           'SUV / Crossover': 1.08, 'MPV': 0.96, 'Cabrio': 1.05,
-           'Coupé': 1.06, 'Bestelwagen': 0.92 }[c] || 1.00;
+           'SUV / Crossover': 1.05, 'MPV': 0.96, 'Cabrio': 1.03,
+           'Coupé': 1.04, 'Bestelwagen': 0.92 }[c] || 1.00;
 }
 
 function fmt(n) {
@@ -1026,6 +1026,7 @@ function bereken() {
 
   let optiesBonus = 0;
   document.querySelectorAll('.optie:checked').forEach(el => { optiesBonus += +el.value; });
+  optiesBonus *= baseRatio;
 
   let prijs = basePrijs * (1 + kmCorr) * staatMult * eigMult * bMult * cMult * onderhoud * apk * uMult * mMult + optiesBonus;
   prijs = Math.max(500, prijs);
