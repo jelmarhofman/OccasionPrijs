@@ -223,6 +223,125 @@
       color: #5d4037;
     }
 
+    /* ── Kenteken section ────────────────────────────────────────── */
+    .kenteken-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .kenteken-plate {
+      display: flex;
+      align-items: stretch;
+      border: 3px solid #e8b800;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 48px;
+    }
+    .kenteken-nl {
+      background: #003399;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      letter-spacing: 1px;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .kenteken-nl .nl-stars { font-size: .65rem; letter-spacing: 0; }
+    #kenteken {
+      background: #f5e642 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      font-family: 'Courier New', monospace !important;
+      font-weight: 800 !important;
+      font-size: 1.15rem !important;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      width: 190px;
+      text-align: center;
+      color: #000 !important;
+      padding: 8px 12px !important;
+      box-shadow: none !important;
+    }
+    #kenteken:focus { outline: none !important; box-shadow: none !important; }
+    .kenteken-status { font-size: .88rem; margin-top: 10px; min-height: 1.4em; }
+    .kenteken-info {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: #e8f0fe;
+      border-radius: 8px;
+      font-size: .88rem;
+      line-height: 1.8;
+    }
+    .kenteken-info strong { color: var(--blue-dk); }
+
+    /* ── Trim badge ──────────────────────────────────────────────── */
+    .trim-hint { margin-top: 4px; min-height: 1.3em; font-size: .82rem; }
+    .trim-badge {
+      display: inline-block;
+      font-size: .75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-right: 4px;
+    }
+    .trim-high { background: #fce4ec; color: #c62828; }
+    .trim-mid  { background: #fff3e0; color: #e65100; }
+    .trim-std  { background: #e8f0fe; color: #1565c0; }
+    .trim-base { background: #f3e5f5; color: #6a1b9a; }
+
+    /* ── Market comparison card ──────────────────────────────────── */
+    #marktCard { border-left: 5px solid var(--orange); display: none; }
+    #marktCard h2 { color: #e65100; border-color: #ffcc80; }
+    .markt-platforms { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+    .markt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: .9rem;
+      color: #fff;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    }
+    .markt-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.22); }
+    .markt-btn-mp  { background: linear-gradient(135deg, #d32f2f, #b71c1c); }
+    .markt-btn-as  { background: linear-gradient(135deg, #ff6d00, #e65100); }
+    .markt-btn-gp  { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+    .markt-btn-at  { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+    .markt-logo { font-size: 1.15rem; }
+    .markt-tips {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fff8e1;
+      border-radius: 8px;
+      font-size: .85rem;
+      color: #5d4037;
+      line-height: 1.7;
+    }
+    .markt-tips strong { color: #bf360c; }
+
+    /* ── Loading spinner ─────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* ── Footer ──────────────────────────────────────────────────── */
     footer {
       text-align: center;
@@ -236,10 +355,30 @@
 
 <header>
   <h1>🚗 Occasion Prijsmodel</h1>
-  <p>Bereken de marktwaarde van een gebruikte auto – door Jelmar</p>
+  <p>Kenteken opzoeken · Marktprijsvergelijking · Trim &amp; Motor · Door Jelmar</p>
 </header>
 
 <main>
+
+  <!-- ── Kenteken opzoeken ── -->
+  <div class="card">
+    <h2>🔑 Automatisch invullen via kenteken</h2>
+    <div class="kenteken-row">
+      <div class="kenteken-plate">
+        <div class="kenteken-nl">
+          <span class="nl-stars">★★★★★</span>
+          <span>NL</span>
+        </div>
+        <input type="text" id="kenteken" placeholder="XX-123-Y" maxlength="9"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               oninput="this.value=this.value.toUpperCase()"
+               onkeydown="if(event.key==='Enter')zoekKenteken()" />
+      </div>
+      <button class="btn btn-primary" onclick="zoekKenteken()">🔍 Opzoeken</button>
+    </div>
+    <div id="kentekenStatus" class="kenteken-status"></div>
+    <div id="kentekenInfo" class="kenteken-info" style="display:none"></div>
+  </div>
 
   <!-- ── Voertuiggegevens ── -->
   <div class="card">
@@ -248,7 +387,7 @@
 
       <div class="field">
         <label>Merk</label>
-        <select id="merk">
+        <select id="merk" onchange="updateUitvoeringList()">
           <option value="">– Kies merk –</option>
           <option>Volkswagen</option><option>Ford</option><option>Opel</option>
           <option>Renault</option><option>Peugeot</option><option>Citroën</option>
@@ -256,8 +395,24 @@
           <option>Kia</option><option>Skoda</option><option>SEAT</option>
           <option>BMW</option><option>Mercedes-Benz</option><option>Audi</option>
           <option>Volvo</option><option>Nissan</option><option>Mazda</option>
-          <option>Fiat</option><option>Dacia</option>
+          <option>Fiat</option><option>Dacia</option><option>Cupra</option>
+          <option>Alfa Romeo</option><option>Jeep</option><option>Land Rover</option>
+          <option>Mitsubishi</option><option>Suzuki</option><option>Subaru</option>
         </select>
+      </div>
+
+      <div class="field">
+        <label>Model</label>
+        <input type="text" id="model" placeholder="bijv. Golf, 3 Serie, A-Klasse" />
+      </div>
+
+      <div class="field">
+        <label>Uitvoering / Trim</label>
+        <input type="text" id="uitvoering" list="uitvoeringList"
+               placeholder="bijv. GTI, R-Line, AMG, M Sport"
+               oninput="updateTrimBadge()" />
+        <datalist id="uitvoeringList"></datalist>
+        <div id="trimHint" class="trim-hint"></div>
       </div>
 
       <div class="field">
@@ -293,12 +448,18 @@
       </div>
 
       <div class="field">
+        <label>Motorinhoud (cc)</label>
+        <input type="number" id="motorinhoud" placeholder="bijv. 1395, 1968, 2998"
+               min="0" max="9000" step="1" />
+      </div>
+
+      <div class="field">
         <label>Aantal vorige eigenaren</label>
         <select id="eigenaren">
           <option value="1">1 eigenaar</option>
           <option value="2">2 eigenaren</option>
           <option value="3">3 eigenaren</option>
-          <option value="4" >4+ eigenaren</option>
+          <option value="4">4+ eigenaren</option>
         </select>
       </div>
 
@@ -427,11 +588,250 @@
     <div class="info-box" id="adviesBox"></div>
   </div>
 
+  <!-- ── Marktprijsvergelijking ── -->
+  <div class="card" id="marktCard">
+    <h2>🔗 Vergelijk op de markt</h2>
+    <p style="font-size:.9rem;color:var(--muted);margin-bottom:16px;">
+      Zoek direct vergelijkbare advertenties op de grootste Nederlandse autoplatforms.
+      De zoeklinks worden automatisch ingesteld op basis van uw invoer.
+    </p>
+    <div class="markt-platforms" id="marktPlatforms"></div>
+    <div class="markt-tips" id="marktTips"></div>
+  </div>
+
 </main>
 
-<footer>Occasion Prijsmodel v7 &nbsp;·&nbsp; Gemaakt door Jelmar &nbsp;·&nbsp; Alleen ter indicatie – raadpleeg altijd een erkend taxateur</footer>
+<footer>Occasion Prijsmodel v8 &nbsp;·&nbsp; Gemaakt door Jelmar &nbsp;·&nbsp; Kenteken data: RDW Open Data &nbsp;·&nbsp; Alleen ter indicatie – raadpleeg altijd een erkend taxateur</footer>
 
 <script>
+/* ══════════════════════════════════════════════════════════════════
+   UITVOERING / TRIM DATA
+   ══════════════════════════════════════════════════════════════════ */
+const uitvoeringPerMerk = {
+  'Volkswagen':    ['GTI','GTD','GTE','Golf R','Polo GTI','R-Line','Highline','Comfortline','Trendline','Style','Active','Life','Business','Move'],
+  'Audi':          ['S3','S4','S5','S6','RS3','RS4','RS5','RS6','RS Q8','S line','Sport','Advanced','Business Edition','Edition 1'],
+  'BMW':           ['M3','M4','M5','M135i','M235i','M240i','M440i','M Sport','xDrive','Luxury','Sport Line','Edition','M Performance'],
+  'Mercedes-Benz': ['AMG 43','AMG 63','AMG 45','AMG Line','Avantgarde','Exclusive','Style','Business Solution','Progressive','Night'],
+  'Ford':          ['ST','ST-Line','Titanium','Vignale','Active','Trend','Focus ST','Fiesta ST','Puma ST'],
+  'SEAT':          ['FR','XCELLENCE','Style','Reference','Copa'],
+  'Cupra':         ['Cupra','VZ','Born','Formentor VZ','Leon VZ'],
+  'Skoda':         ['RS','Sportline','Laurin & Klement','Ambition','Active','Scout','Monte Carlo'],
+  'Renault':       ['R.S.','R.S. Line','Intens','Zen','Life','GT Line','E-Tech'],
+  'Peugeot':       ['GT','GT Line','Allure','Active','Access','GT Pack'],
+  'Opel':          ['OPC','GS','GS Line','Elegance','Business Elegance','Edition','Ultimate'],
+  'Toyota':        ['GR Sport','GR','GR Yaris','Bi-Tone','Executive','Style','Active','Comfort','Trend','Dynamic'],
+  'Honda':         ['Type R','Sport','Executive','Elegance','e:HEV'],
+  'Hyundai':       ['N','N Line','Premium','Comfort','Go','i30 N','N Performance'],
+  'Kia':           ['GT Line','Spirit','GT','GT-Line Plus','EV6 GT','Business Line'],
+  'Volvo':         ['R-Design','Inscription','Momentum','Cross Country','Polestar Engineered','Ultimate','Plus'],
+  'Alfa Romeo':    ['Veloce','Super','Sprint','Edizione','Ti','Q4'],
+  'Mazda':         ['GT-M','GT Sport','Exclusive-Line','Skyactiv-X','Homura','100th Anniversary'],
+  'Fiat':          ['Sport','City Cross','Lounge','Pop','Business','Abarth'],
+  'Dacia':         ['Extreme','Journey','Expression','Essential','TCe','Bi-Fuel'],
+  'Nissan':        ['N-Sport','Tekna','N-Connecta','Acenta','Visia','e-POWER'],
+  'Mitsubishi':    ['Intense','Intense+','Spirit','Diamond','Ralliart'],
+  'Suzuki':        ['Allgrip','Style+','Strong Hybrid','Boosterjet'],
+  'Land Rover':    ['R-Dynamic','HSE','SE','S','Autobiography','Dynamic SE'],
+  'Jeep':          ['Trailhawk','Limited','Longitude','Sport','Upland','Summit'],
+  'Subaru':        ['WRX STI','Sport','Lineartronic','XV'],
+};
+
+function updateUitvoeringList() {
+  const merk = document.getElementById('merk').value;
+  const list = document.getElementById('uitvoeringList');
+  list.innerHTML = '';
+  (uitvoeringPerMerk[merk] || []).forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    list.appendChild(opt);
+  });
+}
+
+/* ── Trim multiplier ─────────────────────────────────────────────── */
+function uitvoeringMultiplier(uitvoering) {
+  if (!uitvoering) return 1.0;
+  const u = uitvoering.toLowerCase();
+  // High-performance (+18–28%)
+  if (/\b(rs\s?\d+|63\s?amg|45\s?amg|43\s?amg|type\s?r|golf\s?r\b|gti\b|gts\b|gtd\b|cupra\b(?!\s*line)|m3\b|m4\b|m5\b|m135|m235|m240|m440|\bst\b(?!\s*line)|i30\s?n\b|n\s?performance|wrx\s?sti|abarth|gr\s?yaris|polo\s?gti)\b/.test(u)) return 1.23;
+  // Sport/premium trims (+8–12%)
+  if (/\b(r[\s-]?line|s[\s-]?line|m\s?sport|amg[\s-]?line|n[\s-]?line|gr\s?sport|st[\s-]?line|gte\b|fr\b|r-design|xdrive|veloce|gt(?!\s*line)|rs\s*line|xcellence|monte\s*carlo|polestar)\b/.test(u)) return 1.10;
+  // Mid-premium trims (+3–6%)
+  if (/\b(gt[\s-]?line|highline|sport(?!\s*line)|allure|inscription|titanium|prestige|executive|premium|luxe|comfortline|advanced|business\s*edition|dynamic|ultimate|laurin|edizione)\b/.test(u)) return 1.05;
+  // Base/entry trims (-2–3%)
+  if (/\b(trendline|entry|access|visia|ambition|life\b|basic|start|essent|trend\b|zen\b|expression|essential|reference|active\b|comfort\b(?!\s*line))\b/.test(u)) return 0.97;
+  return 1.0;
+}
+
+function updateTrimBadge() {
+  const u = document.getElementById('uitvoering').value;
+  const m = uitvoeringMultiplier(u);
+  const el = document.getElementById('trimHint');
+  if (!u) { el.innerHTML = ''; return; }
+  let cls, label;
+  if (m >= 1.18)      { cls = 'trim-high'; label = '🔥 High-performance uitvoering'; }
+  else if (m >= 1.07) { cls = 'trim-mid';  label = '⚡ Sport / premium uitvoering'; }
+  else if (m >= 1.03) { cls = 'trim-std';  label = '✨ Mid-tier uitvoering'; }
+  else if (m <= 0.98) { cls = 'trim-base'; label = '📦 Basis uitvoering'; }
+  else                { el.innerHTML = ''; return; }
+  const sign = m > 1 ? '+' : '';
+  el.innerHTML = `<span class="trim-badge ${cls}">${label}</span><span style="color:var(--muted)">${sign}${((m-1)*100).toFixed(0)}% t.o.v. standaard</span>`;
+}
+
+/* ── Engine size multiplier ─────────────────────────────────────── */
+function motorMultiplier(cc) {
+  if (!cc || cc <= 0) return 1.0;
+  if (cc < 1000) return 0.95;
+  if (cc < 1400) return 0.98;
+  if (cc < 1800) return 1.00;
+  if (cc < 2500) return 1.03;
+  if (cc < 3500) return 1.07;
+  return 1.10;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RDW KENTEKEN OPZOEKEN
+   ══════════════════════════════════════════════════════════════════ */
+async function zoekKenteken() {
+  const raw = document.getElementById('kenteken').value;
+  const kenteken = raw.replace(/-/g, '').toUpperCase().trim();
+
+  if (!kenteken) {
+    document.getElementById('kentekenStatus').textContent = '⚠️ Voer een kenteken in.';
+    return;
+  }
+
+  document.getElementById('kentekenStatus').innerHTML = '<span class="spinner"></span> Opzoeken bij RDW…';
+  document.getElementById('kentekenInfo').style.display = 'none';
+
+  try {
+    const [resV, resB] = await Promise.all([
+      fetch(`https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${encodeURIComponent(kenteken)}`),
+      fetch(`https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${encodeURIComponent(kenteken)}`)
+    ]);
+
+    if (!resV.ok || !resB.ok) throw new Error('HTTP ' + resV.status);
+
+    const [voertuig, brandstofData] = await Promise.all([resV.json(), resB.json()]);
+
+    if (!voertuig.length) {
+      document.getElementById('kentekenStatus').textContent = '❌ Kenteken niet gevonden in het RDW-register.';
+      return;
+    }
+
+    const v = voertuig[0];
+    const b = brandstofData[0] || {};
+
+    vulFormulierIn(v, b);
+
+    const merk  = toTitleCase(v.merk  || '');
+    const model = toTitleCase(v.handelsbenaming || '');
+    const jaar  = (v.datum_eerste_toelating || '').substring(0, 4);
+    const bs    = mapBrandstof(b.brandstof_omschrijving || '');
+    const cc    = v.cilinderinhoud ? `${v.cilinderinhoud} cc` : '–';
+    const kw    = b.nettomaximumvermogen ? `${b.nettomaximumvermogen} kW` : '–';
+    const kleur = toTitleCase(v.eerste_kleur || '');
+
+    document.getElementById('kentekenStatus').textContent = '✅ Gegevens ingeladen!';
+    document.getElementById('kentekenInfo').style.display = 'block';
+    document.getElementById('kentekenInfo').innerHTML =
+      `<strong>Voertuig:</strong> ${merk} ${model} &nbsp;|&nbsp; ` +
+      `<strong>Bouwjaar:</strong> ${jaar || '–'} &nbsp;|&nbsp; ` +
+      `<strong>Brandstof:</strong> ${bs || '–'} &nbsp;|&nbsp; ` +
+      `<strong>Motor:</strong> ${cc} / ${kw} &nbsp;|&nbsp; ` +
+      `<strong>Kleur:</strong> ${kleur || '–'}`;
+
+  } catch (e) {
+    document.getElementById('kentekenStatus').textContent = '❌ Fout bij opzoeken – controleer uw verbinding of kenteken.';
+  }
+}
+
+function toTitleCase(str) {
+  return (str || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+}
+
+function mapBrandstof(rdw) {
+  const s = (rdw || '').toLowerCase();
+  if (s.includes('elektriciteit') || s.includes('waterstof')) return 'Elektrisch';
+  if (s.includes('plug') && s.includes('hybride')) return 'Plug-in hybride (PHEV)';
+  if (s.includes('hybride')) return 'Hybride (HEV)';
+  if (s.includes('diesel')) return 'Diesel';
+  if (s.includes('lpg')) return 'LPG';
+  if (s.includes('benzine') || s.includes('alcohol')) return 'Benzine';
+  return '';
+}
+
+function mapCarrosserie(inrichting) {
+  const s = (inrichting || '').toLowerCase();
+  if (s.includes('station')) return 'Stationwagen';
+  if (s.includes('hatchback')) return 'Hatchback';
+  if (s.includes('sedan') || s.includes('limousine')) return 'Sedan';
+  if (s.includes('suv') || s.includes('terrein') || s.includes('sport utility')) return 'SUV / Crossover';
+  if (s.includes('mpv') || s.includes('minivan')) return 'MPV';
+  if (s.includes('cabriolet') || s.includes('cabrio') || s.includes('open')) return 'Cabrio';
+  if (s.includes('coupé') || s.includes('coupe')) return 'Coupé';
+  if (s.includes('bestel') || s.includes('bus')) return 'Bestelwagen';
+  return '';
+}
+
+function mapMerk(rdwMerk) {
+  const normMap = {
+    'volkswagen': 'Volkswagen', 'ford': 'Ford', 'opel': 'Opel',
+    'renault': 'Renault', 'peugeot': 'Peugeot', 'citroen': 'Citroën', 'citroën': 'Citroën',
+    'toyota': 'Toyota', 'honda': 'Honda', 'hyundai': 'Hyundai', 'kia': 'Kia',
+    'skoda': 'Skoda', 'škoda': 'Skoda', 'seat': 'SEAT',
+    'bmw': 'BMW', 'mercedes': 'Mercedes-Benz', 'mercedes-benz': 'Mercedes-Benz',
+    'audi': 'Audi', 'volvo': 'Volvo', 'nissan': 'Nissan', 'mazda': 'Mazda',
+    'fiat': 'Fiat', 'dacia': 'Dacia', 'cupra': 'Cupra', 'alfa': 'Alfa Romeo',
+    'jeep': 'Jeep', 'land rover': 'Land Rover', 'landrover': 'Land Rover',
+    'mitsubishi': 'Mitsubishi', 'suzuki': 'Suzuki', 'subaru': 'Subaru',
+  };
+  const lower = (rdwMerk || '').toLowerCase().trim();
+  for (const [key, val] of Object.entries(normMap)) {
+    if (lower === key || lower.includes(key)) return val;
+  }
+  return toTitleCase(rdwMerk);
+}
+
+function setSelectByText(id, text) {
+  const sel = document.getElementById(id);
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].text === text) { sel.selectedIndex = i; return true; }
+  }
+  return false;
+}
+
+function vulFormulierIn(v, b) {
+  const merk = mapMerk(v.merk || '');
+  if (!setSelectByText('merk', merk) && merk) {
+    // Try partial match (e.g. "Mercedes-Benz" might appear as "Mercedes")
+    const sel = document.getElementById('merk');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].text.toLowerCase().includes(merk.toLowerCase().split(' ')[0])) {
+        sel.selectedIndex = i; break;
+      }
+    }
+  }
+  updateUitvoeringList();
+
+  if (v.handelsbenaming) document.getElementById('model').value = toTitleCase(v.handelsbenaming);
+
+  const datum = (v.datum_eerste_toelating || '').replace(/-/g, '');
+  const jaar  = parseInt(datum.substring(0, 4));
+  if (jaar > 1990) setSelectByText('bouwjaar', String(jaar));
+
+  const bs = mapBrandstof(b.brandstof_omschrijving || '');
+  if (bs) setSelectByText('brandstof', bs);
+
+  const carr = mapCarrosserie(v.inrichting || '');
+  if (carr) setSelectByText('carrosserie', carr);
+
+  if (v.cilinderinhoud) document.getElementById('motorinhoud').value = v.cilinderinhoud;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORM HELPERS
+   ══════════════════════════════════════════════════════════════════ */
+
 /* ── Populate year dropdown ─────────────────────────────────────── */
 (function() {
   const sel = document.getElementById('bouwjaar');
@@ -445,89 +845,58 @@
 })();
 
 /* ── Slider live update ──────────────────────────────────────────── */
-function syncSlider(slider, display, fmt) {
+function syncSlider(slider, display, fmtFn) {
   const update = () => {
     const min = +slider.min, max = +slider.max, val = +slider.value;
     const pct = ((val - min) / (max - min) * 100).toFixed(1);
     slider.style.setProperty('--pct', pct + '%');
-    display.textContent = fmt(val);
+    display.textContent = fmtFn(val);
   };
   slider.addEventListener('input', update);
   update();
 }
 
-syncSlider(
-  document.getElementById('kmSlider'),
-  document.getElementById('kmVal'),
-  v => v.toLocaleString('nl-NL') + ' km'
-);
-syncSlider(
-  document.getElementById('nieuwprijsSlider'),
-  document.getElementById('nieuwprijsVal'),
-  v => '€ ' + v.toLocaleString('nl-NL')
-);
+syncSlider(document.getElementById('kmSlider'),        document.getElementById('kmVal'),        v => v.toLocaleString('nl-NL') + ' km');
+syncSlider(document.getElementById('nieuwprijsSlider'), document.getElementById('nieuwprijsVal'), v => '€ ' + v.toLocaleString('nl-NL'));
 
-/* ── Depreciation model ──────────────────────────────────────────── */
-/**
- * Calculates residual value ratio based on age (years) using a
- * realistic declining-balance depreciation curve.
- */
+/* ══════════════════════════════════════════════════════════════════
+   PRICING MODEL
+   ══════════════════════════════════════════════════════════════════ */
+
 function depRatio(leeftijd, brandstof) {
-  // Electric cars depreciate differently
   const isEV = brandstof === 'Elektrisch';
-  const base = isEV ? 0.82 : 0.78; // first-year residual
-  const decay = isEV ? 0.88 : 0.86; // annual factor after year 1
+  const base = isEV ? 0.82 : 0.78;
+  const decay = isEV ? 0.88 : 0.86;
   if (leeftijd <= 0) return 1;
   if (leeftijd === 1) return base;
   return base * Math.pow(decay, leeftijd - 1);
 }
 
-/* ── Mileage correction ──────────────────────────────────────────── */
 function kmCorrectie(km, leeftijd) {
-  const gemiddeld = leeftijd * 15000; // average 15k km/yr in NL
+  const gemiddeld = leeftijd * 15000;
   const verschil = km - gemiddeld;
-  // ±0.05 per km deviation ≈ €0.05/km ÷ €15 000 avg base ≈ 0.000003 ratio per km (capped at ±20%)
   return Math.max(-0.20, Math.min(0.20, -verschil * 0.000003));
 }
 
-/* ── Condition score → multiplier ───────────────────────────────── */
-function staatMultiplier(carrosserieScore, interieurScore) {
-  const avg = (carrosserieScore + interieurScore) / 2; // 0–4
-  return 0.88 + avg * 0.03; // 0.88 (poor) → 1.00 (excellent)
+function staatMultiplier(cs, ci) {
+  return 0.88 + ((cs + ci) / 2) * 0.03;
 }
 
-/* ── Owner penalty ───────────────────────────────────────────────── */
 function eigenaarMultiplier(n) {
   return [1.00, 0.99, 0.97, 0.94][Math.min(n - 1, 3)];
 }
 
-/* ── Fuel type adjustment ────────────────────────────────────────── */
 function brandstofMultiplier(b) {
-  return {
-    'Benzine': 1.00,
-    'Diesel':  1.02,
-    'Hybride (HEV)': 1.04,
-    'Plug-in hybride (PHEV)': 1.06,
-    'Elektrisch': 1.05,
-    'LPG': 0.94
-  }[b] || 1.00;
+  return { 'Benzine': 1.00, 'Diesel': 1.02, 'Hybride (HEV)': 1.04,
+           'Plug-in hybride (PHEV)': 1.06, 'Elektrisch': 1.05, 'LPG': 0.94 }[b] || 1.00;
 }
 
-/* ── Body type adjustment ────────────────────────────────────────── */
 function carrosserieMultiplier(c) {
-  return {
-    'Hatchback':     1.00,
-    'Sedan':         0.98,
-    'Stationwagen':  1.02,
-    'SUV / Crossover': 1.08,
-    'MPV':           0.96,
-    'Cabrio':        1.05,
-    'Coupé':         1.06,
-    'Bestelwagen':   0.92
-  }[c] || 1.00;
+  return { 'Hatchback': 1.00, 'Sedan': 0.98, 'Stationwagen': 1.02,
+           'SUV / Crossover': 1.08, 'MPV': 0.96, 'Cabrio': 1.05,
+           'Coupé': 1.06, 'Bestelwagen': 0.92 }[c] || 1.00;
 }
 
-/* ── Format currency ─────────────────────────────────────────────── */
 function fmt(n) {
   return '€\u00a0' + Math.round(n).toLocaleString('nl-NL');
 }
@@ -544,47 +913,46 @@ function bereken() {
   const staatI     = +document.getElementById('staatInterieur').value;
   const onderhoud  = +document.getElementById('onderhoud').value;
   const apk        = +document.getElementById('apk').value;
+  const uitvoering = document.getElementById('uitvoering').value.trim();
+  const motorCC    = +document.getElementById('motorinhoud').value || 0;
+  const merk       = document.getElementById('merk').value;
+  const model      = document.getElementById('model').value.trim();
 
-  const now        = new Date().getFullYear();
-  const leeftijd   = now - bouwjaar;
+  const now      = new Date().getFullYear();
+  const leeftijd = now - bouwjaar;
 
-  // Base depreciation
-  const baseRatio  = depRatio(leeftijd, brandstof);
-  const basePrijs  = nieuwprijs * baseRatio;
+  const baseRatio = depRatio(leeftijd, brandstof);
+  const basePrijs = nieuwprijs * baseRatio;
 
-  // Individual multipliers
-  const kmCorr     = kmCorrectie(km, leeftijd);
-  const staatMult  = staatMultiplier(staatC, staatI);
-  const eigMult    = eigenaarMultiplier(nEig);
-  const bMult      = brandstofMultiplier(brandstof);
-  const cMult      = carr ? carrosserieMultiplier(carr) : 1.00;
+  const kmCorr    = kmCorrectie(km, leeftijd);
+  const staatMult = staatMultiplier(staatC, staatI);
+  const eigMult   = eigenaarMultiplier(nEig);
+  const bMult     = brandstofMultiplier(brandstof);
+  const cMult     = carr ? carrosserieMultiplier(carr) : 1.00;
+  const uMult     = uitvoeringMultiplier(uitvoering);
+  const mMult     = motorMultiplier(motorCC);
 
-  // Options bonus
   let optiesBonus = 0;
   document.querySelectorAll('.optie:checked').forEach(el => { optiesBonus += +el.value; });
 
-  // Combined price – kmCorr is a ratio modifier (±20%), applied as (1 + kmCorr)
-  let prijs = basePrijs * (1 + kmCorr) * staatMult * eigMult * bMult * cMult * onderhoud * apk + optiesBonus;
-  prijs = Math.max(500, prijs); // floor
+  let prijs = basePrijs * (1 + kmCorr) * staatMult * eigMult * bMult * cMult * onderhoud * apk * uMult * mMult + optiesBonus;
+  prijs = Math.max(500, prijs);
 
-  // Range ±7%
   const low  = prijs * 0.93;
   const high = prijs * 1.07;
 
-  /* ── Display main price ── */
   document.getElementById('prijsMain').textContent = fmt(prijs);
-  document.getElementById('prijsRange').textContent =
-    `Verwachte bandbreedte: ${fmt(low)} – ${fmt(high)}`;
+  document.getElementById('prijsRange').textContent = `Verwachte bandbreedte: ${fmt(low)} – ${fmt(high)}`;
 
-  /* ── Meta grid ── */
-  document.getElementById('metaGrid').innerHTML = `
+  let metaHtml = `
     <div class="meta-item"><div class="label">Leeftijd</div><div class="value">${leeftijd} jaar</div></div>
     <div class="meta-item"><div class="label">Afschrijving</div><div class="value">${((1 - baseRatio)*100).toFixed(0)}%</div></div>
     <div class="meta-item"><div class="label">Restwaarde</div><div class="value">${(baseRatio*100).toFixed(0)}%</div></div>
-    <div class="meta-item"><div class="label">Kilometerstand</div><div class="value">${km.toLocaleString('nl-NL')} km</div></div>
-  `;
+    <div class="meta-item"><div class="label">Kilometerstand</div><div class="value">${km.toLocaleString('nl-NL')} km</div></div>`;
+  if (uitvoering) metaHtml += `<div class="meta-item"><div class="label">Uitvoering</div><div class="value">${uitvoering}</div></div>`;
+  if (motorCC > 0) metaHtml += `<div class="meta-item"><div class="label">Motorinhoud</div><div class="value">${motorCC} cc</div></div>`;
+  document.getElementById('metaGrid').innerHTML = metaHtml;
 
-  /* ── Breakdown table ── */
   const rows = [
     ['Nieuwprijs', '', fmt(nieuwprijs)],
     ['Afschrijving leeftijd', `${leeftijd} jaar (${((1-baseRatio)*100).toFixed(0)}%)`, fmt(-nieuwprijs*(1-baseRatio))],
@@ -595,128 +963,186 @@ function bereken() {
     ['Eigenaren', `${nEig} eigenaar(en)`, fmt(basePrijs*(eigMult-1))],
     ['Onderhoud', document.getElementById('onderhoud').selectedOptions[0].text, fmt(basePrijs*(onderhoud-1))],
     ['APK', document.getElementById('apk').selectedOptions[0].text, fmt(basePrijs*(apk-1))],
-    ['Extra opties', `${document.querySelectorAll('.optie:checked').length} geselecteerd`, fmt(optiesBonus)],
   ];
+  if (uitvoering) rows.push(['Uitvoering/Trim', uitvoering, fmt(basePrijs*(uMult-1))]);
+  if (motorCC > 0) rows.push(['Motorinhoud', `${motorCC} cc`, fmt(basePrijs*(mMult-1))]);
+  rows.push(['Extra opties', `${document.querySelectorAll('.optie:checked').length} geselecteerd`, fmt(optiesBonus)]);
 
   document.getElementById('breakdownBody').innerHTML = rows.map(([f, d, e]) => {
-    const v = parseFloat(e.replace(/[^0-9\-]/g,''));
+    const v = parseFloat(e.replace(/[^0-9\-]/g, ''));
     const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
     return `<tr><td>${f}</td><td style="color:var(--muted)">${d}</td><td class="${cls}" style="text-align:right">${e}</td></tr>`;
   }).join('');
 
-  /* ── Depreciation chart ── */
   drawDepChart(nieuwprijs, leeftijd, brandstof);
 
-  /* ── Advies box ── */
   let advies = '';
   if (km > 200000) advies += '⚠️ Zeer hoog kilometerstand – verhoogd risico op mechanische problemen. ';
   if (leeftijd > 15) advies += '⚠️ Auto is ouder dan 15 jaar – hogere onderhoudskosten zijn realistisch. ';
   if (brandstof === 'Diesel' && leeftijd > 8) advies += '⚠️ Oude dieselauto – controleer roetfilter en turbo. ';
   if (brandstof === 'Elektrisch') advies += '🔋 Elektrisch – vraag om batterijrapport en resterende capaciteit. ';
+  if (uMult >= 1.18) advies += '🏁 High-performance uitvoering – controleer of onderhoud en banden bij de auto passen. ';
   if (!advies) advies = '✅ De ingevoerde gegevens zien er goed uit. Laat altijd een onafhankelijke keuring uitvoeren vóór aankoop.';
   document.getElementById('adviesBox').textContent = advies;
 
-  /* ── Show result ── */
   const el = document.getElementById('result');
   el.style.display = 'block';
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  toonMarktVergelijking(merk, model, uitvoering, bouwjaar, km, prijs);
 }
 
-/* ── Simple canvas depreciation chart ───────────────────────────── */
+/* ── Depreciation chart ──────────────────────────────────────────── */
 function drawDepChart(nieuwprijs, huidig, brandstof) {
   const canvas = document.getElementById('depChart');
   const W = canvas.offsetWidth || 600;
   const H = 180;
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-
   const pad = { t: 16, r: 20, b: 32, l: 60 };
-  const cW = W - pad.l - pad.r;
-  const cH = H - pad.t - pad.b;
-
+  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
   const years = 16;
   const vals = [];
   for (let i = 0; i <= years; i++) vals.push(nieuwprijs * depRatio(i, brandstof));
-
-  const minV = 0, maxV = nieuwprijs;
-
+  const maxV = nieuwprijs;
   ctx.clearRect(0, 0, W, H);
-
-  // Grid lines
-  ctx.strokeStyle = '#e0e0e0';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = pad.t + cH - (cH * i / 4);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
-    ctx.fillStyle = '#9e9e9e';
-    ctx.font = '11px Segoe UI, sans-serif';
-    ctx.textAlign = 'right';
+    ctx.fillStyle = '#9e9e9e'; ctx.font = '11px Segoe UI, sans-serif'; ctx.textAlign = 'right';
     ctx.fillText('€' + Math.round(maxV * i / 4 / 1000) + 'k', pad.l - 6, y + 4);
   }
-
-  // X labels
-  ctx.fillStyle = '#9e9e9e';
-  ctx.textAlign = 'center';
-  ctx.font = '11px Segoe UI, sans-serif';
+  ctx.fillStyle = '#9e9e9e'; ctx.textAlign = 'center'; ctx.font = '11px Segoe UI, sans-serif';
   for (let i = 0; i <= years; i += 2) {
-    const x = pad.l + cW * (i / years);
-    ctx.fillText(i === 0 ? 'Nu' : i + 'j', x, H - 6);
+    ctx.fillText(i === 0 ? 'Nu' : i + 'j', pad.l + cW * (i / years), H - 6);
   }
-
-  // Line
-  ctx.beginPath();
-  ctx.strokeStyle = '#34a853';
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.strokeStyle = '#34a853'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
   vals.forEach((v, i) => {
     const x = pad.l + cW * (i / years);
-    const y = pad.t + cH - (cH * (v - minV) / (maxV - minV));
+    const y = pad.t + cH - (cH * v / maxV);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.stroke();
+  ctx.lineTo(pad.l + cW, pad.t + cH); ctx.lineTo(pad.l, pad.t + cH); ctx.closePath();
+  ctx.fillStyle = 'rgba(52,168,83,.12)'; ctx.fill();
+  const hi = Math.min(huidig, years);
+  const cx = pad.l + cW * (hi / years);
+  const cy = pad.t + cH - (cH * (nieuwprijs * depRatio(hi, brandstof)) / maxV);
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#1a73e8'; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+}
 
-  // Fill below
-  ctx.lineTo(pad.l + cW, pad.t + cH);
-  ctx.lineTo(pad.l, pad.t + cH);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(52,168,83,.12)';
-  ctx.fill();
+/* ══════════════════════════════════════════════════════════════════
+   MARKTPRIJSVERGELIJKING – deep links naar platforms
+   ══════════════════════════════════════════════════════════════════ */
+function slugify(s) {
+  return (s || '').toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u')
+    .replace(/ç/g,'c').replace(/ñ/g,'n').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
 
-  // Current year marker
-  const cx = pad.l + cW * (huidig / years);
-  const cv = nieuwprijs * depRatio(huidig, brandstof);
-  const cy = pad.t + cH - (cH * (cv - minV) / (maxV - minV));
-  ctx.beginPath();
-  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
-  ctx.fillStyle = '#1a73e8';
-  ctx.fill();
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+function buildMarktplaatsUrl(merk, model, uitvoering, bouwjaar, km, prijs) {
+  const q = [merk, model, uitvoering].filter(Boolean).join(' ');
+  let url = `https://www.marktplaats.nl/l/auto-s/?query=${encodeURIComponent(q)}&categoryId=91`;
+  if (prijs > 0) url += `&attributes=PriceCents:${Math.round(prijs*0.78*100)}:${Math.round(prijs*1.22*100)}`;
+  return url;
+}
+
+function buildAutoScout24Url(merk, model, bouwjaar, km, prijs) {
+  const ms = slugify(merk), mdl = slugify(model);
+  let url = `https://www.autoscout24.nl/lst/${ms}`;
+  if (mdl) url += `/${mdl}`;
+  url += `?atype=C&cy=NL`;
+  if (bouwjaar) url += `&fregfrom=${bouwjaar-1}&fregto=${bouwjaar+1}`;
+  if (km > 0)   url += `&kmfrom=${Math.max(0,km-35000)}&kmto=${km+35000}`;
+  if (prijs > 0) url += `&pricefrom=${Math.round(prijs*0.78/500)*500}&priceto=${Math.round(prijs*1.22/500)*500}`;
+  return url;
+}
+
+function buildGaspedaalUrl(merk, model, bouwjaar, km, prijs) {
+  const ms = slugify(merk);
+  let url = `https://www.gaspedaal.nl/${ms}/`;
+  const p = new URLSearchParams();
+  if (model) p.set('model', slugify(model));
+  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
+  if (km > 0)   p.set('kilometerstandtot', km + 35000);
+  if (prijs > 0) { p.set('prijsvan', Math.round(prijs*0.78/500)*500); p.set('prijstot', Math.round(prijs*1.22/500)*500); }
+  const qs = p.toString();
+  return url + (qs ? '?' + qs : '');
+}
+
+function buildAutotrackUrl(merk, model, bouwjaar, prijs) {
+  const p = new URLSearchParams();
+  if (merk)    p.set('merk', merk);
+  if (model)   p.set('model', model);
+  if (bouwjaar){ p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
+  if (prijs > 0){ p.set('prijsvan', Math.round(prijs*0.78/500)*500); p.set('prijstot', Math.round(prijs*1.22/500)*500); }
+  return `https://www.autotrack.nl/aanbod/auto?${p.toString()}`;
+}
+
+function toonMarktVergelijking(merk, model, uitvoering, bouwjaar, km, prijs) {
+  const card = document.getElementById('marktCard');
+  if (!merk) { card.style.display = 'none'; return; }
+
+  const mpUrl  = buildMarktplaatsUrl(merk, model, uitvoering, bouwjaar, km, prijs);
+  const asUrl  = buildAutoScout24Url(merk, model, bouwjaar, km, prijs);
+  const gpUrl  = buildGaspedaalUrl(merk, model, bouwjaar, km, prijs);
+  const atUrl  = buildAutotrackUrl(merk, model, bouwjaar, prijs);
+
+  document.getElementById('marktPlatforms').innerHTML = `
+    <a href="${mpUrl}"  target="_blank" rel="noopener noreferrer" class="markt-btn markt-btn-mp">
+      <span class="markt-logo">🏷️</span> Marktplaats
+    </a>
+    <a href="${asUrl}"  target="_blank" rel="noopener noreferrer" class="markt-btn markt-btn-as">
+      <span class="markt-logo">🔍</span> AutoScout24
+    </a>
+    <a href="${gpUrl}"  target="_blank" rel="noopener noreferrer" class="markt-btn markt-btn-gp">
+      <span class="markt-logo">⛽</span> Gaspedaal
+    </a>
+    <a href="${atUrl}"  target="_blank" rel="noopener noreferrer" class="markt-btn markt-btn-at">
+      <span class="markt-logo">🚘</span> Autotrack
+    </a>`;
+
+  const uMult = uitvoeringMultiplier(uitvoering);
+  const low = fmt(prijs * 0.93), high = fmt(prijs * 1.07);
+  let tips = `<strong>💡 Vergelijkingstips voor ${merk}${model ? ' ' + model : ''}${uitvoering ? ' ' + uitvoering : ''}:</strong><br>`;
+  tips += `• Onze schatting: <strong>${low} – ${high}</strong>. Gebruik dit als onderhandelingsbasis.<br>`;
+  if (uMult >= 1.18) tips += `• <strong>${uitvoering}</strong> is een gevraagde sportvariant – marktprijzen liggen doorgaans hoger; check ook onderhoud en banden.<br>`;
+  else if (uMult >= 1.08) tips += `• <strong>${uitvoering}</strong> is een gewilde uitvoering – controleer ook vergelijkbare sportvarianten.<br>`;
+  tips += `• Filter op ±1 jaar bouwjaar en ±35.000 km – de links zijn al vooraf ingesteld.<br>`;
+  tips += `• Controleer altijd NAP (geen fraude), APK-datum en volledige onderhoudshistorie.<br>`;
+  tips += `• Vraag bij twijfel een ANWB/Bovag taxatierapport aan vóór aankoop.`;
+  document.getElementById('marktTips').innerHTML = tips;
+
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ── Reset ──────────────────────────────────────────────────────── */
 function reset() {
+  ['kenteken','model','uitvoering','motorinhoud'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('kentekenStatus').textContent = '';
+  document.getElementById('kentekenInfo').style.display = 'none';
+  document.getElementById('trimHint').innerHTML = '';
   document.getElementById('merk').value = '';
   document.getElementById('carrosserie').value = '';
-  document.getElementById('brandstof').selectedIndex = 0;
-  document.getElementById('transmissie').selectedIndex = 0;
-  document.getElementById('eigenaren').selectedIndex = 0;
+  ['brandstof','transmissie','eigenaren'].forEach(id => { document.getElementById(id).selectedIndex = 0; });
   document.getElementById('staatCarrosserie').selectedIndex = 1;
   document.getElementById('staatInterieur').selectedIndex = 1;
   document.getElementById('onderhoud').selectedIndex = 1;
   document.getElementById('apk').selectedIndex = 1;
-  document.querySelectorAll('.optie').forEach(el => el.checked = false);
+  document.querySelectorAll('.optie').forEach(el => { el.checked = false; });
   document.getElementById('kmSlider').value = 80000;
   document.getElementById('nieuwprijsSlider').value = 30000;
-  ['kmSlider','nieuwprijsSlider'].forEach(id => document.getElementById(id).dispatchEvent(new Event('input')));
+  ['kmSlider','nieuwprijsSlider'].forEach(id => { document.getElementById(id).dispatchEvent(new Event('input')); });
   document.getElementById('result').style.display = 'none';
+  document.getElementById('marktCard').style.display = 'none';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// Set bouwjaar to current year - 4 by default
-document.getElementById('bouwjaar').dispatchEvent(new Event('change'));
 </script>
 
 </body>
