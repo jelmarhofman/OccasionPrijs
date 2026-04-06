@@ -1319,7 +1319,7 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
 
   const html = await _proxyGet(url);
 
-  /* Next.js embed: <script id="__NEXT_DATA__" ...>{...}</script> */
+  /* Next.js embed: script#__NEXT_DATA__ JSON block */
   const ndm = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (ndm) {
     try {
