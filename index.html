@@ -587,20 +587,20 @@
       <div class="field">
         <label>Onderhoudshistorie</label>
         <select id="onderhoud">
-          <option value="1.05">Volledig dealer-onderhoud</option>
+          <option value="1.03">Volledig dealer-onderhoud</option>
           <option value="1.02" selected>Regelmatig onderhoud (APK)</option>
           <option value="0.97">Onderhoud onbekend</option>
-          <option value="0.92">Achterstallig onderhoud</option>
+          <option value="0.90">Achterstallig onderhoud</option>
         </select>
       </div>
 
       <div class="field">
         <label>APK geldig tot</label>
         <select id="apk">
-          <option value="1.03">&gt; 12 maanden</option>
+          <option value="1.02">&gt; 12 maanden</option>
           <option value="1.01" selected>6–12 maanden</option>
           <option value="0.99">0–6 maanden</option>
-          <option value="0.96">Verlopen / onbekend</option>
+          <option value="0.93">Verlopen / onbekend</option>
         </select>
       </div>
     </div>
@@ -742,12 +742,12 @@ function updateUitvoeringList() {
 function uitvoeringMultiplier(uitvoering) {
   if (!uitvoering) return 1.0;
   const u = uitvoering.toLowerCase();
-  // High-performance (+18–28%)
-  if (/\b(rs\s?\d+|63\s?amg|45\s?amg|43\s?amg|type\s?r|golf\s?r\b|gti\b|gts\b|gtd\b|cupra\b(?!\s*line)|m3\b|m4\b|m5\b|m135|m235|m240|m440|\bst\b(?!\s*line)|i30\s?n\b|n\s?performance|wrx\s?sti|abarth|gr\s?yaris|polo\s?gti)\b/.test(u)) return 1.23;
-  // Sport/premium trims (+8–12%)
-  if (/\b(r[\s-]?line|s[\s-]?line|m\s?sport|amg[\s-]?line|n[\s-]?line|gr\s?sport|st[\s-]?line|gte\b|fr\b|r-design|xdrive|veloce|gt(?!\s*line)|rs\s*line|xcellence|monte\s*carlo|polestar)\b/.test(u)) return 1.10;
-  // Mid-premium trims (+3–6%)
-  if (/\b(gt[\s-]?line|highline|sport(?!\s*line)|allure|inscription|titanium|prestige|executive|premium|luxe|comfortline|advanced|business\s*edition|dynamic|ultimate|laurin|edizione)\b/.test(u)) return 1.05;
+  // High-performance (+15–18%)
+  if (/\b(rs\s?\d+|63\s?amg|45\s?amg|43\s?amg|type\s?r|golf\s?r\b|gti\b|gts\b|gtd\b|cupra\b(?!\s*line)|m3\b|m4\b|m5\b|m135|m235|m240|m440|\bst\b(?!\s*line)|i30\s?n\b|n\s?performance|wrx\s?sti|abarth|gr\s?yaris|polo\s?gti)\b/.test(u)) return 1.18;
+  // Sport/premium trims (+5–7%)
+  if (/\b(r[\s-]?line|s[\s-]?line|m\s?sport|amg[\s-]?line|n[\s-]?line|gr\s?sport|st[\s-]?line|gte\b|fr\b|r-design|xdrive|veloce|gt(?!\s*line)|rs\s*line|xcellence|monte\s*carlo|polestar)\b/.test(u)) return 1.07;
+  // Mid-premium trims (+2–3%)
+  if (/\b(gt[\s-]?line|highline|sport(?!\s*line)|allure|inscription|titanium|prestige|executive|premium|luxe|comfortline|advanced|business\s*edition|dynamic|ultimate|laurin|edizione)\b/.test(u)) return 1.03;
   // Base/entry trims (-2–3%)
   if (/\b(trendline|entry|access|visia|ambition|life\b|basic|start|essent|trend\b|zen\b|expression|essential|reference|active\b|comfort\b(?!\s*line))\b/.test(u)) return 0.97;
   return 1.0;
@@ -957,8 +957,8 @@ syncSlider(document.getElementById('nieuwprijsSlider'), document.getElementById(
 
 function depRatio(leeftijd, brandstof) {
   const isEV = brandstof === 'Elektrisch';
-  const base = isEV ? 0.82 : 0.78;
-  const decay = isEV ? 0.88 : 0.86;
+  const base = isEV ? 0.80 : 0.77;
+  const decay = isEV ? 0.87 : 0.85;
   if (leeftijd <= 0) return 1;
   if (leeftijd === 1) return base;
   return base * Math.pow(decay, leeftijd - 1);
@@ -971,7 +971,7 @@ function kmCorrectie(km, leeftijd) {
 }
 
 function staatMultiplier(cs, ci) {
-  return 0.88 + ((cs + ci) / 2) * 0.03;
+  return 0.85 + ((cs + ci) / 2) * 0.03;
 }
 
 function eigenaarMultiplier(n) {
@@ -985,8 +985,8 @@ function brandstofMultiplier(b) {
 
 function carrosserieMultiplier(c) {
   return { 'Hatchback': 1.00, 'Sedan': 0.98, 'Stationwagen': 1.02,
-           'SUV / Crossover': 1.08, 'MPV': 0.96, 'Cabrio': 1.05,
-           'Coupé': 1.06, 'Bestelwagen': 0.92 }[c] || 1.00;
+           'SUV / Crossover': 1.05, 'MPV': 0.96, 'Cabrio': 1.03,
+           'Coupé': 1.04, 'Bestelwagen': 0.92 }[c] || 1.00;
 }
 
 function fmt(n) {
@@ -1026,6 +1026,7 @@ function bereken() {
 
   let optiesBonus = 0;
   document.querySelectorAll('.optie:checked').forEach(el => { optiesBonus += +el.value; });
+  optiesBonus *= baseRatio;
 
   let prijs = basePrijs * (1 + kmCorr) * staatMult * eigMult * bMult * cMult * onderhoud * apk * uMult * mMult + optiesBonus;
   prijs = Math.max(500, prijs);
@@ -1082,7 +1083,7 @@ function bereken() {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   toonMarktVergelijking(merk, model, uitvoering, bouwjaar, km, prijs);
-  laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, prijs);
+  laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, brandstof, prijs);
 }
 
 /* ── Depreciation chart ──────────────────────────────────────────── */
@@ -1244,6 +1245,17 @@ function toonMarktVergelijking(merk, model, uitvoering, bouwjaar, km, prijs) {
 
 let _lastFormulePrijs = 0;
 
+/* ── Fuel-type mappers ───────────────────────────────────────────── */
+function _mapAS24Fuel(brandstof) {
+  return { 'Benzine': 'B', 'Diesel': 'D', 'Elektrisch': 'E',
+           'Hybride (HEV)': 'H', 'Plug-in hybride (PHEV)': 'M', 'LPG': 'L' }[brandstof] || '';
+}
+function _mapGaspedaalFuel(brandstof) {
+  return { 'Benzine': 'benzine', 'Diesel': 'diesel', 'Elektrisch': 'elektrisch',
+           'Hybride (HEV)': 'hybride', 'Plug-in hybride (PHEV)': 'plug-in-hybride',
+           'LPG': 'lpg' }[brandstof] || '';
+}
+
 function _medianArr(arr) {
   if (!arr.length) return 0;
   const s = [...arr].sort((a, b) => a - b);
@@ -1296,12 +1308,14 @@ async function _proxyGet(targetUrl, ms = 14000) {
 }
 
 /* ── AutoScout24: interne JSON API ──────────────────────────────── */
-async function _tryAS24JsonApi(merk, model, bouwjaar, km) {
+async function _tryAS24JsonApi(merk, model, bouwjaar, km, brandstof) {
   const p = new URLSearchParams({ atype: 'C', cy: 'NL', currency: 'EUR', pagesize: '30', sort: 'standard', desc: '0' });
   if (merk)    p.set('make', merk.toLowerCase());
   if (model)   p.set('model', model.toLowerCase().split(' ')[0]);
-  if (bouwjaar){ p.set('fregfrom', bouwjaar - 2); p.set('fregto', bouwjaar + 2); }
-  if (km > 0)  { p.set('kmfrom', Math.max(0, km - 25000)); p.set('kmto', km + 25000); }
+  if (bouwjaar){ p.set('fregfrom', bouwjaar - 1); p.set('fregto', bouwjaar + 1); }
+  if (km > 0)  { p.set('kmfrom', Math.max(0, km - 20000)); p.set('kmto', km + 20000); }
+  const fuelCode = _mapAS24Fuel(brandstof);
+  if (fuelCode) p.set('fuel', fuelCode);
 
   const text = await _proxyGet(`https://www.autoscout24.nl/proxy/sv/api/v2/listings?${p}`);
   const data = JSON.parse(text);
@@ -1316,14 +1330,16 @@ async function _tryAS24JsonApi(merk, model, bouwjaar, km) {
 }
 
 /* ── AutoScout24: HTML-pagina (Next.js __NEXT_DATA__) ──────────── */
-async function _tryAS24Html(merk, model, bouwjaar, km) {
+async function _tryAS24Html(merk, model, bouwjaar, km, brandstof) {
   const ms = slugify(merk);
   const mdl = model ? slugify(model.split(' ')[0]) : '';
   let url = `https://www.autoscout24.nl/lst/${ms}`;
   if (mdl) url += `/${mdl}`;
   url += `?atype=C&cy=NL&sort=standard&desc=0`;
-  if (bouwjaar) url += `&fregfrom=${bouwjaar - 2}&fregto=${bouwjaar + 2}`;
-  if (km > 0)   url += `&kmfrom=${Math.max(0, km - 25000)}&kmto=${km + 25000}`;
+  if (bouwjaar) url += `&fregfrom=${bouwjaar - 1}&fregto=${bouwjaar + 1}`;
+  if (km > 0)   url += `&kmfrom=${Math.max(0, km - 20000)}&kmto=${km + 20000}`;
+  const fuelCode = _mapAS24Fuel(brandstof);
+  if (fuelCode) url += `&fuel=${fuelCode}`;
 
   const html = await _proxyGet(url);
 
@@ -1359,11 +1375,14 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
 }
 
 /* ── Marktplaats: /lrp/api/search (JSON) ───────────────────────── */
-async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km) {
-  const q = [merk, model, uitvoering].filter(Boolean).join(' ');
+async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km, brandstof) {
+  const fuelTerm = { 'Benzine': 'benzine', 'Diesel': 'diesel', 'Elektrisch': 'elektrisch',
+                     'Hybride (HEV)': 'hybride', 'Plug-in hybride (PHEV)': 'plug-in hybride',
+                     'LPG': 'lpg' }[brandstof] || '';
+  const q = [merk, model, uitvoering, fuelTerm].filter(Boolean).join(' ');
   const p = new URLSearchParams({ query: q, categoryId: '91', l1CategoryId: '91', limit: '30', offset: '0' });
-  if (bouwjaar) { p.set('yearFrom', bouwjaar - 2); p.set('yearTo', bouwjaar + 2); }
-  if (km > 0)   { p.set('mileageFrom', Math.max(0, km - 25000)); p.set('mileageTo', km + 25000); }
+  if (bouwjaar) { p.set('yearFrom', bouwjaar - 1); p.set('yearTo', bouwjaar + 1); }
+  if (km > 0)   { p.set('mileageFrom', Math.max(0, km - 20000)); p.set('mileageTo', km + 20000); }
   const text = await _proxyGet(`https://www.marktplaats.nl/lrp/api/search?${p}`);
   const data = JSON.parse(text);
   const listings = [...(data.listings || []), ...(data.searchResults || [])];
@@ -1379,14 +1398,16 @@ async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km) {
 }
 
 /* ── Gaspedaal: HTML-pagina met diverse price-extractie ─────────── */
-async function _tryGaspedaalHtml(merk, model, bouwjaar, km) {
+async function _tryGaspedaalHtml(merk, model, bouwjaar, km, brandstof) {
   const ms = slugify(merk);
   const mdl = model ? slugify(model.split(' ')[0]) : '';
+  const fuel = _mapGaspedaalFuel(brandstof);
   let url = `https://www.gaspedaal.nl/${ms}/`;
-  if (mdl) url += `${mdl}/`;
+  if (mdl)  url += `${mdl}/`;
+  if (fuel) url += `${fuel}/`;
   const p = new URLSearchParams();
-  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar - 2); p.set('bouwjaartot', bouwjaar + 2); }
-  if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km - 25000)); p.set('kilometerstandtot', km + 25000); }
+  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar - 1); p.set('bouwjaartot', bouwjaar + 1); }
+  if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km - 20000)); p.set('kilometerstandtot', km + 20000); }
   const qs = p.toString();
   if (qs) url += '?' + qs;
 
@@ -1411,39 +1432,6 @@ async function _tryGaspedaalHtml(merk, model, bouwjaar, km) {
   return { source: 'Gaspedaal', prices: arr, total: arr.length };
 }
 
-/* ── Pas de hoofdschatting aan op basis van marktmediaan ───────── */
-function _updatePrijsMetMarktdata(result, formulePrijs) {
-  const sorted = [...result.prices].sort((a, b) => a - b);
-  const med = _medianArr(sorted);
-  const n = sorted.length;
-
-  /* Gewicht voor markt: 40% bij 5 advertenties, oploopt naar 70% bij 50+ */
-  const w = Math.min(0.70, 0.40 + Math.min(n, 50) / 50 * 0.30);
-  const blended = Math.round(med * w + formulePrijs * (1 - w));
-  const low  = Math.round(blended * 0.93);
-  const high = Math.round(blended * 1.07);
-
-  document.getElementById('prijsMain').textContent = fmt(blended);
-  document.getElementById('prijsRange').textContent =
-    `Markt + formule schatting: ${fmt(low)} – ${fmt(high)} · marktmediaan ${fmt(med)} (${n} adv.)`;
-
-  /* Voeg marktcorrectierij toe aan prijsopbouw */
-  const body = document.getElementById('breakdownBody');
-  const old = document.getElementById('marktcorrectieRow');
-  if (old) old.remove();
-  const corrVal = blended - formulePrijs;
-  const corrCls = corrVal > 0 ? 'pos' : corrVal < 0 ? 'neg' : '';
-  const row = document.createElement('tr');
-  row.id = 'marktcorrectieRow';
-  row.innerHTML =
-    `<td>📊 Marktcorrectie</td>` +
-    `<td style="color:var(--muted)">${n} adv. via ${result.source}</td>` +
-    `<td class="${corrCls}" style="text-align:right">${fmt(corrVal)}</td>`;
-  body.appendChild(row);
-
-  _lastFormulePrijs = blended;
-}
-
 /* ── Render het marktdata-blok ─────────────────────────────────── */
 function _renderMarktdataResultaat(result, formulePrijs) {
   const sorted = [...result.prices].sort((a, b) => a - b);
@@ -1455,22 +1443,17 @@ function _renderMarktdataResultaat(result, formulePrijs) {
   const minP = sorted[0];
   const maxP = sorted[n - 1];
 
-  const ref = _lastFormulePrijs || formulePrijs;
-  const diffPct = (ref - med) / med * 100;
+  const diffPct = (formulePrijs - med) / med * 100;
   let posText, posCls;
-  if      (diffPct < -8) { posText = `✅ ${Math.abs(diffPct).toFixed(0)}% onder marktmediaan – scherp geprijsd`; posCls = 'pos-laag'; }
-  else if (diffPct >  8) { posText = `⬆️ ${diffPct.toFixed(0)}% boven marktmediaan`; posCls = 'pos-hoog'; }
-  else                   { posText = `✅ Marktconform (${diffPct > 0 ? '+' : ''}${diffPct.toFixed(0)}%)`; posCls = 'pos-ok'; }
-
-  const blendNote = n >= 5
-    ? `<div style="font-size:.82rem;color:var(--muted);margin-top:6px;">💡 De bovenstaande prijs is bijgewerkt: ${Math.round(Math.min(0.70, 0.40+Math.min(n,50)/50*0.30)*100)}% marktmediaan + ${Math.round((1-Math.min(0.70,0.40+Math.min(n,50)/50*0.30))*100)}% formule.</div>`
-    : '';
+  if      (diffPct < -8) { posText = `✅ Formule schatting ligt ${Math.abs(diffPct).toFixed(0)}% onder marktmediaan – scherp geprijsd`; posCls = 'pos-laag'; }
+  else if (diffPct >  8) { posText = `⬆️ Formule schatting ligt ${diffPct.toFixed(0)}% boven marktmediaan`; posCls = 'pos-hoog'; }
+  else                   { posText = `✅ Formule schatting is marktconform (${diffPct > 0 ? '+' : ''}${diffPct.toFixed(0)}%)`; posCls = 'pos-ok'; }
 
   const time = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
   return `
     <div class="marktdata-bron">
-      📡 Live data: <strong>${result.source}</strong> · ${n} advertenties geanalyseerd
+      📡 Live data: <strong>${result.source}</strong> · ${n} vergelijkbare advertenties geanalyseerd
       <span style="float:right;font-size:.78rem">${time}</span>
     </div>
     <div class="marktdata-stats">
@@ -1480,14 +1463,13 @@ function _renderMarktdataResultaat(result, formulePrijs) {
       <div class="stat-item"><div class="stat-label">75e percentiel</div><div class="stat-value">${fmt(q75)}</div></div>
     </div>
     <div class="marktdata-positie ${posCls}">
-      ${posText} — Gecorrigeerde schatting: <strong>${fmt(ref)}</strong> · Mediaan markt: <strong>${fmt(med)}</strong>
+      ${posText} — Formule schatting: <strong>${fmt(formulePrijs)}</strong> · Marktmediaan: <strong>${fmt(med)}</strong>
     </div>
-    <div class="marktdata-spreiding">Prijsbereik advertenties: ${fmt(minP)} – ${fmt(maxP)}</div>
-    ${blendNote}`;
+    <div class="marktdata-spreiding">Prijsbereik advertenties: ${fmt(minP)} – ${fmt(maxP)}</div>`;
 }
 
 /* ── Hoofdfunctie: laad marktdata en update schatting ───────────── */
-async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, formulePrijs) {
+async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, brandstof, formulePrijs) {
   _lastFormulePrijs = formulePrijs;
   const card = document.getElementById('marktdataCard');
   if (!merk) { card.style.display = 'none'; return; }
@@ -1498,10 +1480,10 @@ async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, formuleP
 
   /* Probeer bronnen achtereenvolgens; stop bij eerste succes ≥3 prijzen */
   const sources = [
-    () => _tryAS24JsonApi(merk, model, bouwjaar, km),
-    () => _tryAS24Html(merk, model, bouwjaar, km),
-    () => _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km),
-    () => _tryGaspedaalHtml(merk, model, bouwjaar, km),
+    () => _tryAS24JsonApi(merk, model, bouwjaar, km, brandstof),
+    () => _tryAS24Html(merk, model, bouwjaar, km, brandstof),
+    () => _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km, brandstof),
+    () => _tryGaspedaalHtml(merk, model, bouwjaar, km, brandstof),
   ];
 
   let result = null;
@@ -1515,7 +1497,6 @@ async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, formuleP
   }
 
   if (result) {
-    if (result.prices.length >= 5) _updatePrijsMetMarktdata(result, formulePrijs);
     document.getElementById('marktdataInhoud').innerHTML =
       _renderMarktdataResultaat(result, formulePrijs);
   } else {
@@ -1580,8 +1561,6 @@ function reset() {
   document.getElementById('result').style.display = 'none';
   document.getElementById('marktdataCard').style.display = 'none';
   document.getElementById('marktCard').style.display = 'none';
-  const mr = document.getElementById('marktcorrectieRow');
-  if (mr) mr.remove();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
