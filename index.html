@@ -741,6 +741,7 @@ async function zoekKenteken() {
       `<strong>Kleur:</strong> ${kleur || '–'}`;
 
   } catch (e) {
+    console.error('RDW lookup failed:', e);
     document.getElementById('kentekenStatus').textContent = '❌ Fout bij opzoeken – controleer uw verbinding of kenteken.';
   }
 }
@@ -835,11 +836,11 @@ function vulFormulierIn(v, b) {
 /* ── Populate year dropdown ─────────────────────────────────────── */
 (function() {
   const sel = document.getElementById('bouwjaar');
-  const now = new Date().getFullYear();
-  for (let y = now; y >= 1990; y--) {
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= 1990; y--) {
     const o = document.createElement('option');
     o.value = y; o.textContent = y;
-    if (y === now - 4) o.selected = true;
+    if (y === currentYear - 4) o.selected = true;
     sel.appendChild(o);
   }
 })();
@@ -918,8 +919,8 @@ function bereken() {
   const merk       = document.getElementById('merk').value;
   const model      = document.getElementById('model').value.trim();
 
-  const now      = new Date().getFullYear();
-  const leeftijd = now - bouwjaar;
+  const currentYear = new Date().getFullYear();
+  const leeftijd = currentYear - bouwjaar;
 
   const baseRatio = depRatio(leeftijd, brandstof);
   const basePrijs = nieuwprijs * baseRatio;
@@ -1045,10 +1046,21 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 }
 
+/* Returns {low, high} price bounds rounded to nearest €500 (±22% range) */
+function priceBounds(prijs) {
+  return {
+    low:  Math.round(prijs * 0.78 / 500) * 500,
+    high: Math.round(prijs * 1.22 / 500) * 500,
+  };
+}
+
 function buildMarktplaatsUrl(merk, model, uitvoering, bouwjaar, km, prijs) {
   const q = [merk, model, uitvoering].filter(Boolean).join(' ');
   let url = `https://www.marktplaats.nl/l/auto-s/?query=${encodeURIComponent(q)}&categoryId=91`;
-  if (prijs > 0) url += `&attributes=PriceCents:${Math.round(prijs*0.78*100)}:${Math.round(prijs*1.22*100)}`;
+  if (prijs > 0) {
+    const b = priceBounds(prijs);
+    url += `&attributes=PriceCents:${b.low * 100}:${b.high * 100}`;
+  }
   return url;
 }
 
@@ -1059,7 +1071,10 @@ function buildAutoScout24Url(merk, model, bouwjaar, km, prijs) {
   url += `?atype=C&cy=NL`;
   if (bouwjaar) url += `&fregfrom=${bouwjaar-1}&fregto=${bouwjaar+1}`;
   if (km > 0)   url += `&kmfrom=${Math.max(0,km-35000)}&kmto=${km+35000}`;
-  if (prijs > 0) url += `&pricefrom=${Math.round(prijs*0.78/500)*500}&priceto=${Math.round(prijs*1.22/500)*500}`;
+  if (prijs > 0) {
+    const b = priceBounds(prijs);
+    url += `&pricefrom=${b.low}&priceto=${b.high}`;
+  }
   return url;
 }
 
@@ -1070,7 +1085,10 @@ function buildGaspedaalUrl(merk, model, bouwjaar, km, prijs) {
   if (model) p.set('model', slugify(model));
   if (bouwjaar) { p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
   if (km > 0)   p.set('kilometerstandtot', km + 35000);
-  if (prijs > 0) { p.set('prijsvan', Math.round(prijs*0.78/500)*500); p.set('prijstot', Math.round(prijs*1.22/500)*500); }
+  if (prijs > 0) {
+    const b = priceBounds(prijs);
+    p.set('prijsvan', b.low); p.set('prijstot', b.high);
+  }
   const qs = p.toString();
   return url + (qs ? '?' + qs : '');
 }
@@ -1080,7 +1098,10 @@ function buildAutotrackUrl(merk, model, bouwjaar, prijs) {
   if (merk)    p.set('merk', merk);
   if (model)   p.set('model', model);
   if (bouwjaar){ p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
-  if (prijs > 0){ p.set('prijsvan', Math.round(prijs*0.78/500)*500); p.set('prijstot', Math.round(prijs*1.22/500)*500); }
+  if (prijs > 0) {
+    const b = priceBounds(prijs);
+    p.set('prijsvan', b.low); p.set('prijstot', b.high);
+  }
   return `https://www.autotrack.nl/aanbod/auto?${p.toString()}`;
 }
 
