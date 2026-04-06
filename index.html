@@ -1161,8 +1161,8 @@ function buildAutoScout24Url(merk, model, bouwjaar, km, prijs) {
   let url = `https://www.autoscout24.nl/lst/${ms}`;
   if (mdl) url += `/${mdl}`;
   url += `?atype=C&cy=NL`;
-  if (bouwjaar) url += `&fregfrom=${bouwjaar-1}&fregto=${bouwjaar+1}`;
-  if (km > 0)   url += `&kmfrom=${Math.max(0,km-35000)}&kmto=${km+35000}`;
+  if (bouwjaar) url += `&fregfrom=${bouwjaar-2}&fregto=${bouwjaar+2}`;
+  if (km > 0)   url += `&kmfrom=${Math.max(0,km-25000)}&kmto=${km+25000}`;
   if (prijs > 0) {
     const b = priceBounds(prijs);
     url += `&pricefrom=${b.low}&priceto=${b.high}`;
@@ -1175,8 +1175,8 @@ function buildGaspedaalUrl(merk, model, bouwjaar, km, prijs) {
   let url = `https://www.gaspedaal.nl/${ms}/`;
   const p = new URLSearchParams();
   if (model) p.set('model', slugify(model));
-  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
-  if (km > 0)   p.set('kilometerstandtot', km + 35000);
+  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar-2); p.set('bouwjaartot', bouwjaar+2); }
+  if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km-25000)); p.set('kilometerstandtot', km+25000); }
   if (prijs > 0) {
     const b = priceBounds(prijs);
     p.set('prijsvan', b.low); p.set('prijstot', b.high);
@@ -1189,7 +1189,7 @@ function buildAutotrackUrl(merk, model, bouwjaar, prijs) {
   const p = new URLSearchParams();
   if (merk)    p.set('merk', merk);
   if (model)   p.set('model', model);
-  if (bouwjaar){ p.set('bouwjaarvan', bouwjaar-1); p.set('bouwjaartot', bouwjaar+1); }
+  if (bouwjaar){ p.set('bouwjaarvan', bouwjaar-2); p.set('bouwjaartot', bouwjaar+2); }
   if (prijs > 0) {
     const b = priceBounds(prijs);
     p.set('prijsvan', b.low); p.set('prijstot', b.high);
@@ -1259,6 +1259,13 @@ function _parseEuros(val) {
   return isFinite(n) && n > 0 ? n : 0;
 }
 
+/* Verwijder outliers: houd alleen prijzen binnen 40% van de ruwe mediaan */
+function _filterOutliers(prices) {
+  if (prices.length < 4) return prices;
+  const rough = _medianArr(prices);
+  return prices.filter(p => p >= rough * 0.60 && p <= rough * 1.60);
+}
+
 /* ── Proxy helper: probeert allorigins.win → corsproxy.io → codetabs ── */
 const _PROXIES = [
   u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
@@ -1293,16 +1300,17 @@ async function _tryAS24JsonApi(merk, model, bouwjaar, km) {
   const p = new URLSearchParams({ atype: 'C', cy: 'NL', currency: 'EUR', pagesize: '30', sort: 'standard', desc: '0' });
   if (merk)    p.set('make', merk.toLowerCase());
   if (model)   p.set('model', model.toLowerCase().split(' ')[0]);
-  if (bouwjaar){ p.set('fregfrom', bouwjaar - 1); p.set('fregto', bouwjaar + 1); }
-  if (km > 0)  { p.set('kmfrom', Math.max(0, km - 40000)); p.set('kmto', km + 40000); }
+  if (bouwjaar){ p.set('fregfrom', bouwjaar - 2); p.set('fregto', bouwjaar + 2); }
+  if (km > 0)  { p.set('kmfrom', Math.max(0, km - 25000)); p.set('kmto', km + 25000); }
 
   const text = await _proxyGet(`https://www.autoscout24.nl/proxy/sv/api/v2/listings?${p}`);
   const data = JSON.parse(text);
-  const prices = (data.listings || []).flatMap(l => {
+  const raw = (data.listings || []).flatMap(l => {
     const v = l.prices?.public?.priceRaw ?? l.price ?? l.priceCurrent;
     const n = _parseEuros(v);
     return n > 1000 && n < 499000 ? [n] : [];
   });
+  const prices = _filterOutliers(raw);
   if (prices.length < 3) throw new Error(`AS24 API: ${prices.length} prijzen`);
   return { source: 'AutoScout24', prices, total: data.totalCount || prices.length };
 }
@@ -1314,8 +1322,8 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
   let url = `https://www.autoscout24.nl/lst/${ms}`;
   if (mdl) url += `/${mdl}`;
   url += `?atype=C&cy=NL&sort=standard&desc=0`;
-  if (bouwjaar) url += `&fregfrom=${bouwjaar - 1}&fregto=${bouwjaar + 1}`;
-  if (km > 0)   url += `&kmfrom=${Math.max(0, km - 40000)}&kmto=${km + 40000}`;
+  if (bouwjaar) url += `&fregfrom=${bouwjaar - 2}&fregto=${bouwjaar + 2}`;
+  if (km > 0)   url += `&kmfrom=${Math.max(0, km - 25000)}&kmto=${km + 25000}`;
 
   const html = await _proxyGet(url);
 
@@ -1326,11 +1334,12 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
       const nd = JSON.parse(ndm[1]);
       const listings = nd?.props?.pageProps?.listings
                     || nd?.props?.pageProps?.initialState?.listings || [];
-      const prices = listings.flatMap(l => {
+      const raw = listings.flatMap(l => {
         const v = l.prices?.public?.priceRaw ?? l.price ?? l.priceCurrent;
         const n = _parseEuros(v);
         return n > 1000 && n < 499000 ? [n] : [];
       });
+      const prices = _filterOutliers(raw);
       if (prices.length >= 3) {
         return { source: 'AutoScout24', prices,
                  total: nd?.props?.pageProps?.listingsCount || prices.length };
@@ -1339,12 +1348,12 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
   }
 
   /* Fallback: regex voor priceRaw-velden in JSON-fragmenten */
-  const prices = new Set();
+  const rawPrices = new Set();
   for (const m of html.matchAll(/"priceRaw"\s*:\s*(\d{4,6})/g)) {
     const n = parseInt(m[1]);
-    if (n > 1000 && n < 499000) prices.add(n);
+    if (n > 1000 && n < 499000) rawPrices.add(n);
   }
-  const arr = [...prices];
+  const arr = _filterOutliers([...rawPrices]);
   if (arr.length < 3) throw new Error(`AS24 HTML: ${arr.length} prijzen`);
   return { source: 'AutoScout24', prices: arr, total: arr.length };
 }
@@ -1353,15 +1362,18 @@ async function _tryAS24Html(merk, model, bouwjaar, km) {
 async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km) {
   const q = [merk, model, uitvoering].filter(Boolean).join(' ');
   const p = new URLSearchParams({ query: q, categoryId: '91', l1CategoryId: '91', limit: '30', offset: '0' });
+  if (bouwjaar) { p.set('yearFrom', bouwjaar - 2); p.set('yearTo', bouwjaar + 2); }
+  if (km > 0)   { p.set('mileageFrom', Math.max(0, km - 25000)); p.set('mileageTo', km + 25000); }
   const text = await _proxyGet(`https://www.marktplaats.nl/lrp/api/search?${p}`);
   const data = JSON.parse(text);
   const listings = [...(data.listings || []), ...(data.searchResults || [])];
-  const prices = listings.flatMap(l => {
+  const raw = listings.flatMap(l => {
     const cents = l.priceInfo?.priceCents;
     if (cents > 0) return [cents / 100];
     const n = _parseEuros(l.priceInfo?.priceText || l.price);
     return n > 1000 && n < 499000 ? [n] : [];
   });
+  const prices = _filterOutliers(raw);
   if (prices.length < 3) throw new Error(`MP: ${prices.length} prijzen`);
   return { source: 'Marktplaats', prices, total: data.totalResultCount || prices.length };
 }
@@ -1373,8 +1385,8 @@ async function _tryGaspedaalHtml(merk, model, bouwjaar, km) {
   let url = `https://www.gaspedaal.nl/${ms}/`;
   if (mdl) url += `${mdl}/`;
   const p = new URLSearchParams();
-  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar - 1); p.set('bouwjaartot', bouwjaar + 1); }
-  if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km - 40000)); p.set('kilometerstandtot', km + 40000); }
+  if (bouwjaar) { p.set('bouwjaarvan', bouwjaar - 2); p.set('bouwjaartot', bouwjaar + 2); }
+  if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km - 25000)); p.set('kilometerstandtot', km + 25000); }
   const qs = p.toString();
   if (qs) url += '?' + qs;
 
@@ -1394,7 +1406,7 @@ async function _tryGaspedaalHtml(merk, model, bouwjaar, km) {
     const n = _parseEuros(m[1]); if (n > 1000 && n < 499000) prices.add(n);
   }
 
-  const arr = [...prices];
+  const arr = _filterOutliers([...prices]);
   if (arr.length < 3) throw new Error(`GP: ${arr.length} prijzen`);
   return { source: 'Gaspedaal', prices: arr, total: arr.length };
 }
