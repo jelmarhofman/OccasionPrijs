@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Occasion Prijsmodel – Jelmar</title>
+  <style>
+    /* ── Reset & base ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1a73e8;
+      --blue-dk: #1558b0;
+      --green:   #34a853;
+      --red:     #ea4335;
+      --orange:  #fbbc04;
+      --bg:      #f0f4f8;
+      --card:    #ffffff;
+      --text:    #202124;
+      --muted:   #5f6368;
+      --border:  #dadce0;
+      --radius:  12px;
+      --shadow:  0 2px 8px rgba(0,0,0,.12);
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: #fff;
+      padding: 28px 24px 24px;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { margin-top: 6px; opacity: .85; font-size: .95rem; }
+
+    /* ── Layout ──────────────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 16px 48px;
+      display: grid;
+      gap: 24px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px 28px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--blue);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    /* ── Form grid ───────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .field select,
+    .field input[type="number"],
+    .field input[type="text"] {
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: .95rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color .2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field select:focus,
+    .field input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26,115,232,.15);
+    }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 34px;
+    }
+
+    /* ── Slider ──────────────────────────────────────────────────── */
+    .slider-wrap { grid-column: 1 / -1; }
+    .slider-row { display: flex; align-items: center; gap: 14px; }
+    .slider-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(to right, var(--blue) 0%, var(--blue) var(--pct, 50%), var(--border) var(--pct, 50%), var(--border) 100%);
+      cursor: pointer;
+    }
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .slider-val {
+      min-width: 70px;
+      text-align: right;
+      font-weight: 600;
+      font-size: .92rem;
+    }
+    .slider-labels { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── Checkbox group ──────────────────────────────────────────── */
+    .check-group {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .check-group label {
+      display: flex; align-items: center; gap: 7px;
+      font-size: .88rem; cursor: pointer;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      transition: border-color .2s, background .2s;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .check-group input[type="checkbox"] { accent-color: var(--blue); width: 15px; height: 15px; }
+    .check-group label:has(input:checked) { border-color: var(--blue); background: #e8f0fe; }
+
+    /* ── Buttons ─────────────────────────────────────────────────── */
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      padding: 12px 28px;
+      border: none; border-radius: 8px;
+      font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: background .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: var(--blue-dk); }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* ── Result panel ────────────────────────────────────────────── */
+    #result {
+      display: none;
+      background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+      border-left: 5px solid var(--green);
+    }
+    #result h2 { color: var(--green); border-color: #a5d6a7; }
+    .price-big {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -1px;
+    }
+    .price-range {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .price-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .meta-item {
+      background: rgba(255,255,255,.7);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .meta-item .label { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .meta-item .value { font-size: 1rem; font-weight: 700; margin-top: 3px; }
+
+    /* ── Breakdown table ─────────────────────────────────────────── */
+    .breakdown { margin-top: 20px; }
+    .breakdown h3 { font-size: .95rem; font-weight: 600; margin-bottom: 10px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .pos { color: var(--green); font-weight: 600; }
+    .neg { color: var(--red); font-weight: 600; }
+
+    /* ── Depreciation chart ──────────────────────────────────────── */
+    .chart-wrap { margin-top: 20px; }
+    .chart-wrap h3 { font-size: .95rem; font-weight: 600; margin-bottom: 12px; color: var(--muted); }
+    #depChart { width: 100%; height: 180px; }
+
+    /* ── Info box ────────────────────────────────────────────────── */
+    .info-box {
+      background: #fff8e1;
+      border-left: 4px solid var(--orange);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      font-size: .85rem;
+      margin-top: 12px;
+      color: #5d4037;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚗 Occasion Prijsmodel</h1>
+  <p>Bereken de marktwaarde van een gebruikte auto – door Jelmar</p>
+</header>
+
+<main>
+
+  <!-- ── Voertuiggegevens ── -->
+  <div class="card">
+    <h2>🔍 Voertuiggegevens</h2>
+    <div class="grid">
+
+      <div class="field">
+        <label>Merk</label>
+        <select id="merk">
+          <option value="">– Kies merk –</option>
+          <option>Volkswagen</option><option>Ford</option><option>Opel</option>
+          <option>Renault</option><option>Peugeot</option><option>Citroën</option>
+          <option>Toyota</option><option>Honda</option><option>Hyundai</option>
+          <option>Kia</option><option>Skoda</option><option>SEAT</option>
+          <option>BMW</option><option>Mercedes-Benz</option><option>Audi</option>
+          <option>Volvo</option><option>Nissan</option><option>Mazda</option>
+          <option>Fiat</option><option>Dacia</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Carrosserie</label>
+        <select id="carrosserie">
+          <option value="">– Kies type –</option>
+          <option>Hatchback</option><option>Sedan</option><option>Stationwagen</option>
+          <option>SUV / Crossover</option><option>MPV</option><option>Cabrio</option>
+          <option>Coupé</option><option>Bestelwagen</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Bouwjaar</label>
+        <select id="bouwjaar"></select>
+      </div>
+
+      <div class="field">
+        <label>Brandstof</label>
+        <select id="brandstof">
+          <option>Benzine</option><option>Diesel</option>
+          <option>Hybride (HEV)</option><option>Plug-in hybride (PHEV)</option>
+          <option>Elektrisch</option><option>LPG</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Transmissie</label>
+        <select id="transmissie">
+          <option>Handgeschakeld</option><option>Automaat</option>
+          <option>Semi-automaat</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Aantal vorige eigenaren</label>
+        <select id="eigenaren">
+          <option value="1">1 eigenaar</option>
+          <option value="2">2 eigenaren</option>
+          <option value="3">3 eigenaren</option>
+          <option value="4" >4+ eigenaren</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- Kilometerstand slider -->
+    <div class="grid" style="margin-top:20px;">
+      <div class="field slider-wrap">
+        <label>Kilometerstand</label>
+        <div class="slider-row">
+          <input type="range" id="kmSlider" min="0" max="300000" step="5000" value="80000" />
+          <span class="slider-val" id="kmVal">80.000 km</span>
+        </div>
+        <div class="slider-labels"><span>0 km</span><span>300.000 km</span></div>
+      </div>
+    </div>
+
+    <!-- Nieuwprijs slider -->
+    <div class="grid" style="margin-top:12px;">
+      <div class="field slider-wrap">
+        <label>Nieuwprijs (€)</label>
+        <div class="slider-row">
+          <input type="range" id="nieuwprijsSlider" min="10000" max="120000" step="1000" value="30000" />
+          <span class="slider-val" id="nieuwprijsVal">€ 30.000</span>
+        </div>
+        <div class="slider-labels"><span>€ 10.000</span><span>€ 120.000</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Staat & opties ── -->
+  <div class="card">
+    <h2>🔧 Staat &amp; Opties</h2>
+
+    <div class="grid">
+      <div class="field">
+        <label>Staat carrosserie</label>
+        <select id="staatCarrosserie">
+          <option value="4">Uitstekend (geen schade)</option>
+          <option value="3" selected>Goed (kleine krassen)</option>
+          <option value="2">Redelijk (lichte schade)</option>
+          <option value="1">Matig (zichtbare schade)</option>
+          <option value="0">Slecht (grote schade)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Staat interieur</label>
+        <select id="staatInterieur">
+          <option value="4">Uitstekend</option>
+          <option value="3" selected>Goed</option>
+          <option value="2">Redelijk</option>
+          <option value="1">Matig</option>
+          <option value="0">Slecht</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Onderhoudshistorie</label>
+        <select id="onderhoud">
+          <option value="1.05">Volledig dealer-onderhoud</option>
+          <option value="1.02" selected>Regelmatig onderhoud (APK)</option>
+          <option value="0.97">Onderhoud onbekend</option>
+          <option value="0.92">Achterstallig onderhoud</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>APK geldig tot</label>
+        <select id="apk">
+          <option value="1.03">&gt; 12 maanden</option>
+          <option value="1.01" selected>6–12 maanden</option>
+          <option value="0.99">0–6 maanden</option>
+          <option value="0.96">Verlopen / onbekend</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <label style="font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:10px;">Extra opties</label>
+      <div class="check-group">
+        <label><input type="checkbox" class="optie" value="500" /> Navigatie / infotainment</label>
+        <label><input type="checkbox" class="optie" value="400" /> Achteruitrijcamera</label>
+        <label><input type="checkbox" class="optie" value="600" /> Panoramadak</label>
+        <label><input type="checkbox" class="optie" value="350" /> Trekhaak</label>
+        <label><input type="checkbox" class="optie" value="300" /> Stoelverwarming</label>
+        <label><input type="checkbox" class="optie" value="200" /> Bluetooth / carplay</label>
+        <label><input type="checkbox" class="optie" value="500" /> Leder interieur</label>
+        <label><input type="checkbox" class="optie" value="400" /> Xenon / LED koplampen</label>
+        <label><input type="checkbox" class="optie" value="250" /> Lichtmetalen velgen</label>
+        <label><input type="checkbox" class="optie" value="700" /> Adaptieve cruise control</label>
+        <label><input type="checkbox" class="optie" value="600" /> Dodehoekdetectie</label>
+        <label><input type="checkbox" class="optie" value="450" /> Elektrische stoelen</label>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:24px;">
+      <button class="btn btn-primary" onclick="bereken()">💶 Bereken prijs</button>
+      <button class="btn btn-secondary" onclick="reset()">↺ Wis alles</button>
+    </div>
+
+  </div>
+
+  <!-- ── Resultaat ── -->
+  <div class="card" id="result">
+    <h2>💰 Geschatte marktwaarde</h2>
+    <div class="price-big" id="prijsMain">–</div>
+    <div class="price-range" id="prijsRange">–</div>
+
+    <div class="price-meta" id="metaGrid"></div>
+
+    <div class="breakdown">
+      <h3>Prijsopbouw</h3>
+      <table>
+        <thead><tr><th>Factor</th><th>Omschrijving</th><th style="text-align:right">Effect</th></tr></thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+
+    <div class="chart-wrap">
+      <h3>Verwachte waardedaling</h3>
+      <canvas id="depChart"></canvas>
+    </div>
+
+    <div class="info-box" id="adviesBox"></div>
+  </div>
+
+</main>
+
+<footer>Occasion Prijsmodel v7 &nbsp;·&nbsp; Gemaakt door Jelmar &nbsp;·&nbsp; Alleen ter indicatie – raadpleeg altijd een erkend taxateur</footer>
+
+<script>
+/* ── Populate year dropdown ─────────────────────────────────────── */
+(function() {
+  const sel = document.getElementById('bouwjaar');
+  const now = new Date().getFullYear();
+  for (let y = now; y >= 1990; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === now - 4) o.selected = true;
+    sel.appendChild(o);
+  }
+})();
+
+/* ── Slider live update ──────────────────────────────────────────── */
+function syncSlider(slider, display, fmt) {
+  const update = () => {
+    const min = +slider.min, max = +slider.max, val = +slider.value;
+    const pct = ((val - min) / (max - min) * 100).toFixed(1);
+    slider.style.setProperty('--pct', pct + '%');
+    display.textContent = fmt(val);
+  };
+  slider.addEventListener('input', update);
+  update();
+}
+
+syncSlider(
+  document.getElementById('kmSlider'),
+  document.getElementById('kmVal'),
+  v => v.toLocaleString('nl-NL') + ' km'
+);
+syncSlider(
+  document.getElementById('nieuwprijsSlider'),
+  document.getElementById('nieuwprijsVal'),
+  v => '€ ' + v.toLocaleString('nl-NL')
+);
+
+/* ── Depreciation model ──────────────────────────────────────────── */
+/**
+ * Calculates residual value ratio based on age (years) using a
+ * realistic declining-balance depreciation curve.
+ */
+function depRatio(leeftijd, brandstof) {
+  // Electric cars depreciate differently
+  const isEV = brandstof === 'Elektrisch';
+  const base = isEV ? 0.82 : 0.78; // first-year residual
+  const decay = isEV ? 0.88 : 0.86; // annual factor after year 1
+  if (leeftijd <= 0) return 1;
+  if (leeftijd === 1) return base;
+  return base * Math.pow(decay, leeftijd - 1);
+}
+
+/* ── Mileage correction ──────────────────────────────────────────── */
+function kmCorrectie(km, leeftijd) {
+  const gemiddeld = leeftijd * 15000; // average 15k km/yr in NL
+  const verschil = km - gemiddeld;
+  // ±0.05 per km deviation ≈ €0.05/km ÷ €15 000 avg base ≈ 0.000003 ratio per km (capped at ±20%)
+  return Math.max(-0.20, Math.min(0.20, -verschil * 0.000003));
+}
+
+/* ── Condition score → multiplier ───────────────────────────────── */
+function staatMultiplier(carrosserieScore, interieurScore) {
+  const avg = (carrosserieScore + interieurScore) / 2; // 0–4
+  return 0.88 + avg * 0.03; // 0.88 (poor) → 1.00 (excellent)
+}
+
+/* ── Owner penalty ───────────────────────────────────────────────── */
+function eigenaarMultiplier(n) {
+  return [1.00, 0.99, 0.97, 0.94][Math.min(n - 1, 3)];
+}
+
+/* ── Fuel type adjustment ────────────────────────────────────────── */
+function brandstofMultiplier(b) {
+  return {
+    'Benzine': 1.00,
+    'Diesel':  1.02,
+    'Hybride (HEV)': 1.04,
+    'Plug-in hybride (PHEV)': 1.06,
+    'Elektrisch': 1.05,
+    'LPG': 0.94
+  }[b] || 1.00;
+}
+
+/* ── Body type adjustment ────────────────────────────────────────── */
+function carrosserieMultiplier(c) {
+  return {
+    'Hatchback':     1.00,
+    'Sedan':         0.98,
+    'Stationwagen':  1.02,
+    'SUV / Crossover': 1.08,
+    'MPV':           0.96,
+    'Cabrio':        1.05,
+    'Coupé':         1.06,
+    'Bestelwagen':   0.92
+  }[c] || 1.00;
+}
+
+/* ── Format currency ─────────────────────────────────────────────── */
+function fmt(n) {
+  return '€\u00a0' + Math.round(n).toLocaleString('nl-NL');
+}
+
+/* ── Main calculation ────────────────────────────────────────────── */
+function bereken() {
+  const nieuwprijs = +document.getElementById('nieuwprijsSlider').value;
+  const bouwjaar   = +document.getElementById('bouwjaar').value;
+  const km         = +document.getElementById('kmSlider').value;
+  const brandstof  = document.getElementById('brandstof').value;
+  const carr       = document.getElementById('carrosserie').value;
+  const nEig       = +document.getElementById('eigenaren').value;
+  const staatC     = +document.getElementById('staatCarrosserie').value;
+  const staatI     = +document.getElementById('staatInterieur').value;
+  const onderhoud  = +document.getElementById('onderhoud').value;
+  const apk        = +document.getElementById('apk').value;
+
+  const now        = new Date().getFullYear();
+  const leeftijd   = now - bouwjaar;
+
+  // Base depreciation
+  const baseRatio  = depRatio(leeftijd, brandstof);
+  const basePrijs  = nieuwprijs * baseRatio;
+
+  // Individual multipliers
+  const kmCorr     = kmCorrectie(km, leeftijd);
+  const staatMult  = staatMultiplier(staatC, staatI);
+  const eigMult    = eigenaarMultiplier(nEig);
+  const bMult      = brandstofMultiplier(brandstof);
+  const cMult      = carr ? carrosserieMultiplier(carr) : 1.00;
+
+  // Options bonus
+  let optiesBonus = 0;
+  document.querySelectorAll('.optie:checked').forEach(el => { optiesBonus += +el.value; });
+
+  // Combined price – kmCorr is a ratio modifier (±20%), applied as (1 + kmCorr)
+  let prijs = basePrijs * (1 + kmCorr) * staatMult * eigMult * bMult * cMult * onderhoud * apk + optiesBonus;
+  prijs = Math.max(500, prijs); // floor
+
+  // Range ±7%
+  const low  = prijs * 0.93;
+  const high = prijs * 1.07;
+
+  /* ── Display main price ── */
+  document.getElementById('prijsMain').textContent = fmt(prijs);
+  document.getElementById('prijsRange').textContent =
+    `Verwachte bandbreedte: ${fmt(low)} – ${fmt(high)}`;
+
+  /* ── Meta grid ── */
+  document.getElementById('metaGrid').innerHTML = `
+    <div class="meta-item"><div class="label">Leeftijd</div><div class="value">${leeftijd} jaar</div></div>
+    <div class="meta-item"><div class="label">Afschrijving</div><div class="value">${((1 - baseRatio)*100).toFixed(0)}%</div></div>
+    <div class="meta-item"><div class="label">Restwaarde</div><div class="value">${(baseRatio*100).toFixed(0)}%</div></div>
+    <div class="meta-item"><div class="label">Kilometerstand</div><div class="value">${km.toLocaleString('nl-NL')} km</div></div>
+  `;
+
+  /* ── Breakdown table ── */
+  const rows = [
+    ['Nieuwprijs', '', fmt(nieuwprijs)],
+    ['Afschrijving leeftijd', `${leeftijd} jaar (${((1-baseRatio)*100).toFixed(0)}%)`, fmt(-nieuwprijs*(1-baseRatio))],
+    ['KM-correctie', km > leeftijd*15000 ? 'Te hoog km-stand' : 'Laag km-stand', fmt(basePrijs * kmCorr)],
+    ['Staat voertuig', `Score ${staatC+staatI}/8`, fmt(basePrijs*(staatMult-1))],
+    ['Brandstoftype', brandstof, fmt(basePrijs*(bMult-1))],
+    ['Carrosserie', carr || '–', fmt(basePrijs*(cMult-1))],
+    ['Eigenaren', `${nEig} eigenaar(en)`, fmt(basePrijs*(eigMult-1))],
+    ['Onderhoud', document.getElementById('onderhoud').selectedOptions[0].text, fmt(basePrijs*(onderhoud-1))],
+    ['APK', document.getElementById('apk').selectedOptions[0].text, fmt(basePrijs*(apk-1))],
+    ['Extra opties', `${document.querySelectorAll('.optie:checked').length} geselecteerd`, fmt(optiesBonus)],
+  ];
+
+  document.getElementById('breakdownBody').innerHTML = rows.map(([f, d, e]) => {
+    const v = parseFloat(e.replace(/[^0-9\-]/g,''));
+    const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+    return `<tr><td>${f}</td><td style="color:var(--muted)">${d}</td><td class="${cls}" style="text-align:right">${e}</td></tr>`;
+  }).join('');
+
+  /* ── Depreciation chart ── */
+  drawDepChart(nieuwprijs, leeftijd, brandstof);
+
+  /* ── Advies box ── */
+  let advies = '';
+  if (km > 200000) advies += '⚠️ Zeer hoog kilometerstand – verhoogd risico op mechanische problemen. ';
+  if (leeftijd > 15) advies += '⚠️ Auto is ouder dan 15 jaar – hogere onderhoudskosten zijn realistisch. ';
+  if (brandstof === 'Diesel' && leeftijd > 8) advies += '⚠️ Oude dieselauto – controleer roetfilter en turbo. ';
+  if (brandstof === 'Elektrisch') advies += '🔋 Elektrisch – vraag om batterijrapport en resterende capaciteit. ';
+  if (!advies) advies = '✅ De ingevoerde gegevens zien er goed uit. Laat altijd een onafhankelijke keuring uitvoeren vóór aankoop.';
+  document.getElementById('adviesBox').textContent = advies;
+
+  /* ── Show result ── */
+  const el = document.getElementById('result');
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Simple canvas depreciation chart ───────────────────────────── */
+function drawDepChart(nieuwprijs, huidig, brandstof) {
+  const canvas = document.getElementById('depChart');
+  const W = canvas.offsetWidth || 600;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const pad = { t: 16, r: 20, b: 32, l: 60 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+
+  const years = 16;
+  const vals = [];
+  for (let i = 0; i <= years; i++) vals.push(nieuwprijs * depRatio(i, brandstof));
+
+  const minV = 0, maxV = nieuwprijs;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + cH - (cH * i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+    ctx.fillStyle = '#9e9e9e';
+    ctx.font = '11px Segoe UI, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('€' + Math.round(maxV * i / 4 / 1000) + 'k', pad.l - 6, y + 4);
+  }
+
+  // X labels
+  ctx.fillStyle = '#9e9e9e';
+  ctx.textAlign = 'center';
+  ctx.font = '11px Segoe UI, sans-serif';
+  for (let i = 0; i <= years; i += 2) {
+    const x = pad.l + cW * (i / years);
+    ctx.fillText(i === 0 ? 'Nu' : i + 'j', x, H - 6);
+  }
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#34a853';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  vals.forEach((v, i) => {
+    const x = pad.l + cW * (i / years);
+    const y = pad.t + cH - (cH * (v - minV) / (maxV - minV));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Fill below
+  ctx.lineTo(pad.l + cW, pad.t + cH);
+  ctx.lineTo(pad.l, pad.t + cH);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(52,168,83,.12)';
+  ctx.fill();
+
+  // Current year marker
+  const cx = pad.l + cW * (huidig / years);
+  const cv = nieuwprijs * depRatio(huidig, brandstof);
+  const cy = pad.t + cH - (cH * (cv - minV) / (maxV - minV));
+  ctx.beginPath();
+  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#1a73e8';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/* ── Reset ──────────────────────────────────────────────────────── */
+function reset() {
+  document.getElementById('merk').value = '';
+  document.getElementById('carrosserie').value = '';
+  document.getElementById('brandstof').selectedIndex = 0;
+  document.getElementById('transmissie').selectedIndex = 0;
+  document.getElementById('eigenaren').selectedIndex = 0;
+  document.getElementById('staatCarrosserie').selectedIndex = 1;
+  document.getElementById('staatInterieur').selectedIndex = 1;
+  document.getElementById('onderhoud').selectedIndex = 1;
+  document.getElementById('apk').selectedIndex = 1;
+  document.querySelectorAll('.optie').forEach(el => el.checked = false);
+  document.getElementById('kmSlider').value = 80000;
+  document.getElementById('nieuwprijsSlider').value = 30000;
+  ['kmSlider','nieuwprijsSlider'].forEach(id => document.getElementById(id).dispatchEvent(new Event('input')));
+  document.getElementById('result').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Set bouwjaar to current year - 4 by default
+document.getElementById('bouwjaar').dispatchEvent(new Event('change'));
+</script>
+
+</body>
+</html>
