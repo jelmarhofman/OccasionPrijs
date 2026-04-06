@@ -1236,7 +1236,10 @@ function toonMarktVergelijking(merk, model, uitvoering, bouwjaar, km, prijs) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   LIVE MARKTDATA  –  AutoScout24 → Marktplaats → Gaspedaal (proxy)
+   LIVE MARKTDATA  –  AutoScout24 · Marktplaats · Gaspedaal via proxy
+   Strategie: meerdere CORS-proxy services als fallback; zodra ≥5
+   advertentieprijzen gevonden worden, wordt de hoofdschatting bijge-
+   werkt op basis van de marktmediaan (60-70% markt + 30-40% formule).
    ══════════════════════════════════════════════════════════════════ */
 
 let _lastFormulePrijs = 0;
@@ -1256,121 +1259,222 @@ function _parseEuros(val) {
   return isFinite(n) && n > 0 ? n : 0;
 }
 
-async function _tryAutoScout24(merk, model, bouwjaar, km) {
-  const p = new URLSearchParams({ atype: 'C', cy: 'NL', currency: 'EUR', pagesize: '25', sort: 'standard', desc: '0' });
-  if (merk)    p.set('make',  merk.toLowerCase());
+/* ── Proxy helper: probeert allorigins.win → corsproxy.io → codetabs ── */
+const _PROXIES = [
+  u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
+
+async function _proxyGet(targetUrl, ms = 14000) {
+  for (const proxyFn of _PROXIES) {
+    try {
+      const res = await fetch(proxyFn(targetUrl), { signal: AbortSignal.timeout(ms) });
+      if (!res.ok) continue;
+      const text = await res.text();
+      /* allorigins.win verpakt het antwoord in JSON met .contents */
+      try {
+        const j = JSON.parse(text);
+        if (typeof j.contents === 'string' && j.contents.length > 100) return j.contents;
+        /* corsproxy / codetabs sturen ruwe JSON terug */
+        return text;
+      } catch {
+        return text; /* raw HTML van transparante proxy */
+      }
+    } catch (e) {
+      console.warn('[proxy]', proxyFn(targetUrl).slice(0, 60), '-', e.message.slice(0, 80));
+    }
+  }
+  throw new Error('Alle proxies mislukt voor: ' + targetUrl.slice(0, 70));
+}
+
+/* ── AutoScout24: interne JSON API ──────────────────────────────── */
+async function _tryAS24JsonApi(merk, model, bouwjaar, km) {
+  const p = new URLSearchParams({ atype: 'C', cy: 'NL', currency: 'EUR', pagesize: '30', sort: 'standard', desc: '0' });
+  if (merk)    p.set('make', merk.toLowerCase());
   if (model)   p.set('model', model.toLowerCase().split(' ')[0]);
   if (bouwjaar){ p.set('fregfrom', bouwjaar - 1); p.set('fregto', bouwjaar + 1); }
   if (km > 0)  { p.set('kmfrom', Math.max(0, km - 40000)); p.set('kmto', km + 40000); }
 
-  const res = await fetch(`https://www.autoscout24.nl/proxy/sv/api/v2/listings?${p}`,
-    { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(7000) });
-  if (!res.ok) throw new Error('AS24 ' + res.status);
-
-  const data = await res.json();
-  const listings = data.listings || [];
-  const prices = listings.flatMap(l => {
-    const v = l.price ?? l.prices?.public?.priceRaw ?? l.priceCurrent;
+  const text = await _proxyGet(`https://www.autoscout24.nl/proxy/sv/api/v2/listings?${p}`);
+  const data = JSON.parse(text);
+  const prices = (data.listings || []).flatMap(l => {
+    const v = l.prices?.public?.priceRaw ?? l.price ?? l.priceCurrent;
     const n = _parseEuros(v);
-    return n > 500 && n < 500000 ? [n] : [];
+    return n > 1000 && n < 499000 ? [n] : [];
   });
-
-  if (prices.length < 3) throw new Error('AS24 te weinig resultaten');
-  return { source: 'AutoScout24', prices, total: data.totalCount || data.count || prices.length };
+  if (prices.length < 3) throw new Error(`AS24 API: ${prices.length} prijzen`);
+  return { source: 'AutoScout24', prices, total: data.totalCount || prices.length };
 }
 
-async function _tryMarktplaats(merk, model, uitvoering, bouwjaar, km) {
+/* ── AutoScout24: HTML-pagina (Next.js __NEXT_DATA__) ──────────── */
+async function _tryAS24Html(merk, model, bouwjaar, km) {
+  const ms = slugify(merk);
+  const mdl = model ? slugify(model.split(' ')[0]) : '';
+  let url = `https://www.autoscout24.nl/lst/${ms}`;
+  if (mdl) url += `/${mdl}`;
+  url += `?atype=C&cy=NL&sort=standard&desc=0`;
+  if (bouwjaar) url += `&fregfrom=${bouwjaar - 1}&fregto=${bouwjaar + 1}`;
+  if (km > 0)   url += `&kmfrom=${Math.max(0, km - 40000)}&kmto=${km + 40000}`;
+
+  const html = await _proxyGet(url);
+
+  /* Next.js embed: <script id="__NEXT_DATA__" ...>{...}</script> */
+  const ndm = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (ndm) {
+    try {
+      const nd = JSON.parse(ndm[1]);
+      const listings = nd?.props?.pageProps?.listings
+                    || nd?.props?.pageProps?.initialState?.listings || [];
+      const prices = listings.flatMap(l => {
+        const v = l.prices?.public?.priceRaw ?? l.price ?? l.priceCurrent;
+        const n = _parseEuros(v);
+        return n > 1000 && n < 499000 ? [n] : [];
+      });
+      if (prices.length >= 3) {
+        return { source: 'AutoScout24', prices,
+                 total: nd?.props?.pageProps?.listingsCount || prices.length };
+      }
+    } catch (e) { console.warn('[AS24 __NEXT_DATA__]', e.message); }
+  }
+
+  /* Fallback: regex voor priceRaw-velden in JSON-fragmenten */
+  const prices = new Set();
+  for (const m of html.matchAll(/"priceRaw"\s*:\s*(\d{4,6})/g)) {
+    const n = parseInt(m[1]);
+    if (n > 1000 && n < 499000) prices.add(n);
+  }
+  const arr = [...prices];
+  if (arr.length < 3) throw new Error(`AS24 HTML: ${arr.length} prijzen`);
+  return { source: 'AutoScout24', prices: arr, total: arr.length };
+}
+
+/* ── Marktplaats: /lrp/api/search (JSON) ───────────────────────── */
+async function _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km) {
   const q = [merk, model, uitvoering].filter(Boolean).join(' ');
   const p = new URLSearchParams({ query: q, categoryId: '91', l1CategoryId: '91', limit: '30', offset: '0' });
-  if (bouwjaar) p.set('attributes', `constructionYear:${bouwjaar - 1}:${bouwjaar + 2}`);
-
-  const res = await fetch(`https://www.marktplaats.nl/lrp/api/search?${p}`,
-    { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(7000) });
-  if (!res.ok) throw new Error('MP ' + res.status);
-
-  const data = await res.json();
+  const text = await _proxyGet(`https://www.marktplaats.nl/lrp/api/search?${p}`);
+  const data = JSON.parse(text);
   const listings = [...(data.listings || []), ...(data.searchResults || [])];
   const prices = listings.flatMap(l => {
     const cents = l.priceInfo?.priceCents;
     if (cents > 0) return [cents / 100];
     const n = _parseEuros(l.priceInfo?.priceText || l.price);
-    return n > 500 && n < 500000 ? [n] : [];
+    return n > 1000 && n < 499000 ? [n] : [];
   });
-
-  if (prices.length < 3) throw new Error('MP te weinig resultaten');
+  if (prices.length < 3) throw new Error(`MP: ${prices.length} prijzen`);
   return { source: 'Marktplaats', prices, total: data.totalResultCount || prices.length };
 }
 
-async function _tryGaspedaalProxy(merk, model, bouwjaar, km) {
+/* ── Gaspedaal: HTML-pagina met diverse price-extractie ─────────── */
+async function _tryGaspedaalHtml(merk, model, bouwjaar, km) {
   const ms = slugify(merk);
   const mdl = model ? slugify(model.split(' ')[0]) : '';
-  let gpUrl = `https://www.gaspedaal.nl/${ms}/`;
-  if (mdl) gpUrl += `${mdl}/`;
+  let url = `https://www.gaspedaal.nl/${ms}/`;
+  if (mdl) url += `${mdl}/`;
   const p = new URLSearchParams();
   if (bouwjaar) { p.set('bouwjaarvan', bouwjaar - 1); p.set('bouwjaartot', bouwjaar + 1); }
   if (km > 0)   { p.set('kilometerstandvan', Math.max(0, km - 40000)); p.set('kilometerstandtot', km + 40000); }
-  gpUrl += '?' + p.toString();
+  const qs = p.toString();
+  if (qs) url += '?' + qs;
 
-  const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(gpUrl)}`,
-    { signal: AbortSignal.timeout(12000) });
-  if (!res.ok) throw new Error('proxy ' + res.status);
+  const html = await _proxyGet(url);
+  const prices = new Set();
 
-  const { contents } = await res.json();
-  if (!contents || contents.length < 500) throw new Error('lege proxy-respons');
-
-  const prices = [];
-  for (const m of contents.matchAll(/"(?:price|prijs|vraagprijs|verkoopprijs)"\s*:\s*(\d{4,6})/gi)) {
-    const n = parseInt(m[1]);
-    if (n > 500 && n < 500000) prices.push(n);
+  for (const m of html.matchAll(/data-price="(\d{4,6})"/g)) {
+    const n = parseInt(m[1]); if (n > 1000 && n < 499000) prices.add(n);
   }
-  if (prices.length < 5) {
-    for (const m of contents.matchAll(/€\s*(\d{1,3}(?:[.,]\d{3})+)/g)) {
-      const n = _parseEuros(m[1]);
-      if (n > 500 && n < 500000) prices.push(n);
-    }
+  for (const m of html.matchAll(/"price"\s*:\s*"?(\d{4,6})"?/g)) {
+    const n = parseInt(m[1]); if (n > 1000 && n < 499000) prices.add(n);
+  }
+  for (const m of html.matchAll(/"prijs"\s*:\s*(\d{4,6})/gi)) {
+    const n = parseInt(m[1]); if (n > 1000 && n < 499000) prices.add(n);
+  }
+  for (const m of html.matchAll(/€\s*(\d{1,3}(?:[.,]\d{3})+)/g)) {
+    const n = _parseEuros(m[1]); if (n > 1000 && n < 499000) prices.add(n);
   }
 
-  const unique = [...new Set(prices)];
-  if (unique.length < 3) throw new Error('GP te weinig prijzen');
-  return { source: 'Gaspedaal', prices: unique, total: unique.length };
+  const arr = [...prices];
+  if (arr.length < 3) throw new Error(`GP: ${arr.length} prijzen`);
+  return { source: 'Gaspedaal', prices: arr, total: arr.length };
 }
 
-function _renderMarktdataResultaat(result, formulePrijs) {
-  const { prices, source, total } = result;
-  prices.sort((a, b) => a - b);
-  const n = prices.length;
-  const med = _medianArr(prices);
-  const avg = Math.round(prices.reduce((s, v) => s + v, 0) / n);
-  const q25 = prices[Math.floor(n * 0.25)];
-  const q75 = prices[Math.floor(n * 0.75)];
-  const minP = prices[0];
-  const maxP = prices[n - 1];
+/* ── Pas de hoofdschatting aan op basis van marktmediaan ───────── */
+function _updatePrijsMetMarktdata(result, formulePrijs) {
+  const sorted = [...result.prices].sort((a, b) => a - b);
+  const med = _medianArr(sorted);
+  const n = sorted.length;
 
-  const diffPct = ((formulePrijs - med) / med * 100);
+  /* Gewicht voor markt: 40% bij 5 advertenties, oploopt naar 70% bij 50+ */
+  const w = Math.min(0.70, 0.40 + Math.min(n, 50) / 50 * 0.30);
+  const blended = Math.round(med * w + formulePrijs * (1 - w));
+  const low  = Math.round(blended * 0.93);
+  const high = Math.round(blended * 1.07);
+
+  document.getElementById('prijsMain').textContent = fmt(blended);
+  document.getElementById('prijsRange').textContent =
+    `Markt + formule schatting: ${fmt(low)} – ${fmt(high)} · marktmediaan ${fmt(med)} (${n} adv.)`;
+
+  /* Voeg marktcorrectierij toe aan prijsopbouw */
+  const body = document.getElementById('breakdownBody');
+  const old = document.getElementById('marktcorrectieRow');
+  if (old) old.remove();
+  const corrVal = blended - formulePrijs;
+  const corrCls = corrVal > 0 ? 'pos' : corrVal < 0 ? 'neg' : '';
+  const row = document.createElement('tr');
+  row.id = 'marktcorrectieRow';
+  row.innerHTML =
+    `<td>📊 Marktcorrectie</td>` +
+    `<td style="color:var(--muted)">${n} adv. via ${result.source}</td>` +
+    `<td class="${corrCls}" style="text-align:right">${fmt(corrVal)}</td>`;
+  body.appendChild(row);
+
+  _lastFormulePrijs = blended;
+}
+
+/* ── Render het marktdata-blok ─────────────────────────────────── */
+function _renderMarktdataResultaat(result, formulePrijs) {
+  const sorted = [...result.prices].sort((a, b) => a - b);
+  const n = sorted.length;
+  const med  = _medianArr(sorted);
+  const avg  = Math.round(sorted.reduce((s, v) => s + v, 0) / n);
+  const q25  = sorted[Math.floor(n * 0.25)];
+  const q75  = sorted[Math.floor(n * 0.75)];
+  const minP = sorted[0];
+  const maxP = sorted[n - 1];
+
+  const ref = _lastFormulePrijs || formulePrijs;
+  const diffPct = (ref - med) / med * 100;
   let posText, posCls;
   if      (diffPct < -8) { posText = `✅ ${Math.abs(diffPct).toFixed(0)}% onder marktmediaan – scherp geprijsd`; posCls = 'pos-laag'; }
   else if (diffPct >  8) { posText = `⬆️ ${diffPct.toFixed(0)}% boven marktmediaan`; posCls = 'pos-hoog'; }
   else                   { posText = `✅ Marktconform (${diffPct > 0 ? '+' : ''}${diffPct.toFixed(0)}%)`; posCls = 'pos-ok'; }
 
+  const blendNote = n >= 5
+    ? `<div style="font-size:.82rem;color:var(--muted);margin-top:6px;">💡 De bovenstaande prijs is bijgewerkt: ${Math.round(Math.min(0.70, 0.40+Math.min(n,50)/50*0.30)*100)}% marktmediaan + ${Math.round((1-Math.min(0.70,0.40+Math.min(n,50)/50*0.30))*100)}% formule.</div>`
+    : '';
+
   const time = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
   return `
     <div class="marktdata-bron">
-      📡 Live data: <strong>${source}</strong> · ${n < total ? n + ' van ' + total : n} advertenties geanalyseerd
+      📡 Live data: <strong>${result.source}</strong> · ${n} advertenties geanalyseerd
       <span style="float:right;font-size:.78rem">${time}</span>
     </div>
     <div class="marktdata-stats">
-      <div class="stat-item"><div class="stat-label">Mediaan marktprijs</div><div class="stat-value stat-main">${fmt(med)}</div></div>
+      <div class="stat-item"><div class="stat-label">Marktmediaan</div><div class="stat-value stat-main">${fmt(med)}</div></div>
       <div class="stat-item"><div class="stat-label">Gemiddelde</div><div class="stat-value">${fmt(avg)}</div></div>
       <div class="stat-item"><div class="stat-label">25e percentiel</div><div class="stat-value">${fmt(q25)}</div></div>
       <div class="stat-item"><div class="stat-label">75e percentiel</div><div class="stat-value">${fmt(q75)}</div></div>
     </div>
     <div class="marktdata-positie ${posCls}">
-      ${posText} — Onze schatting: <strong>${fmt(formulePrijs)}</strong> · Marktmediaan: <strong>${fmt(med)}</strong>
+      ${posText} — Gecorrigeerde schatting: <strong>${fmt(ref)}</strong> · Mediaan markt: <strong>${fmt(med)}</strong>
     </div>
-    <div class="marktdata-spreiding">Prijsbereik: ${fmt(minP)} – ${fmt(maxP)}</div>`;
+    <div class="marktdata-spreiding">Prijsbereik advertenties: ${fmt(minP)} – ${fmt(maxP)}</div>
+    ${blendNote}`;
 }
 
+/* ── Hoofdfunctie: laad marktdata en update schatting ───────────── */
 async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, formulePrijs) {
   _lastFormulePrijs = formulePrijs;
   const card = document.getElementById('marktdataCard');
@@ -1378,28 +1482,35 @@ async function laadLiveMarktdata(merk, model, uitvoering, bouwjaar, km, formuleP
 
   card.style.display = 'block';
   document.getElementById('marktdataInhoud').innerHTML =
-    '<div class="marktdata-loading"><span class="spinner"></span> Live advertentieprijzen ophalen bij AutoScout24 / Marktplaats / Gaspedaal…</div>';
+    '<div class="marktdata-loading"><span class="spinner"></span> Live advertentieprijzen ophalen (AutoScout24 · Marktplaats · Gaspedaal)…</div>';
 
-  let result = null;
-  const attempts = [
-    () => _tryAutoScout24(merk, model, bouwjaar, km),
-    () => _tryMarktplaats(merk, model, uitvoering, bouwjaar, km),
-    () => _tryGaspedaalProxy(merk, model, bouwjaar, km),
+  /* Probeer bronnen achtereenvolgens; stop bij eerste succes ≥3 prijzen */
+  const sources = [
+    () => _tryAS24JsonApi(merk, model, bouwjaar, km),
+    () => _tryAS24Html(merk, model, bouwjaar, km),
+    () => _tryMarktplaatsApi(merk, model, uitvoering, bouwjaar, km),
+    () => _tryGaspedaalHtml(merk, model, bouwjaar, km),
   ];
 
-  for (const fn of attempts) {
-    try { result = await fn(); if (result) break; }
-    catch (e) { console.warn('[marktdata]', e.message); }
+  let result = null;
+  for (const fn of sources) {
+    try {
+      const r = await fn();
+      if (r && r.prices.length >= 3) { result = r; break; }
+    } catch (e) {
+      console.warn('[marktdata]', e.message);
+    }
   }
 
   if (result) {
+    if (result.prices.length >= 5) _updatePrijsMetMarktdata(result, formulePrijs);
     document.getElementById('marktdataInhoud').innerHTML =
       _renderMarktdataResultaat(result, formulePrijs);
   } else {
     document.getElementById('marktdataInhoud').innerHTML = `
       <div class="marktdata-fout">
-        ⚠️ Live marktdata kon niet automatisch worden opgehaald — de platforms staan directe browserverzoeken niet toe (CORS-beperking).<br>
-        Gebruik de vergelijkingslinks hieronder, of voer zelf gevonden prijzen in het vak hieronder om de schatting te vergelijken.
+        ⚠️ Kon geen live marktdata ophalen — autoplatforms blokkeren automatische verzoeken (CORS-beperking).<br>
+        Gebruik de vergelijkingslinks hieronder om zelf te zoeken, of voer gevonden prijzen handmatig in om de schatting te kalibreren.
       </div>`;
   }
 }
@@ -1457,6 +1568,8 @@ function reset() {
   document.getElementById('result').style.display = 'none';
   document.getElementById('marktdataCard').style.display = 'none';
   document.getElementById('marktCard').style.display = 'none';
+  const mr = document.getElementById('marktcorrectieRow');
+  if (mr) mr.remove();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
